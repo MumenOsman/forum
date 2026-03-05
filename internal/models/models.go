@@ -1,5 +1,10 @@
 package models
 
+import (
+	"database/sql"
+	"errors"
+)
+
 /*
 internal/models/models.go
 
@@ -12,12 +17,16 @@ Responsibilities:
 4. Manage database constraints conceptually before applying queries.
 */
 
+// ErrNoRecord is returned when a query returns no rows.
+var ErrNoRecord = errors.New("models: no matching record found")
+
 // User structure for representing a user.
 type User struct {
-	ID       string
-	Email    string
-	Username string
-	Password string // Hashed password
+	ID        string
+	Email     string
+	Username  string
+	Password  string // Hashed password
+	CreatedAt string
 }
 
 // Post structure for representing a forum post.
@@ -31,4 +40,42 @@ type Post struct {
 	CreatedAt string
 }
 
-// ... other models (Comment, Category) go here later.
+// Comment structure for representing a comment on a post.
+type Comment struct {
+	ID        string
+	PostID    string
+	UserID    string
+	Content   string
+	Likes     int
+	Dislikes  int
+	CreatedAt string
+}
+
+// Category represents a forum category.
+type Category struct {
+	ID   int
+	Name string
+}
+
+// AppModel wraps the database connection pool so methods can access it.
+type AppModel struct {
+	DB *sql.DB
+}
+
+// New returns a new instance of an AppModel.
+func New(db *sql.DB) *AppModel {
+	return &AppModel{DB: db}
+}
+
+// Example Stub for inserting a user:
+func (m *AppModel) InsertUser(id, email, username, hashedPassword string) error {
+	stmt := `INSERT INTO users (id, email, username, password) VALUES (?, ?, ?, ?)`
+	_, err := m.DB.Exec(stmt, id, email, username, hashedPassword)
+	return err
+}
+
+// Example Stub for getting post:
+func (m *AppModel) GetPost(id string) (*Post, error) {
+	// Execute SELECT query here...
+	return nil, ErrNoRecord
+}

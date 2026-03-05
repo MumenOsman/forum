@@ -1,10 +1,11 @@
 package main
 
 import (
+	"literary-lions-forum/internal/database"
+	"literary-lions-forum/internal/handlers"
+	"literary-lions-forum/internal/models"
 	"log"
 	"net/http"
-	// "literary-lions-forum/internal/handlers"
-	// "literary-lions-forum/internal/database"
 )
 
 /*
@@ -20,19 +21,28 @@ Responsibilities:
 5. Start the web server and listen for incoming HTTP requests.
 */
 func main() {
-	// 1. Initialize DB connection (Stub)
-	// db, err := database.OpenDB("forum.db")
+	// 1. Initialize DB connection
+	db, err := database.InitDB("forum.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
-	// 2. Setup application dependencies (Stub)
-	// app := &application{ models: models.New(db) }
+	if err := database.InitSchema(db); err != nil {
+		log.Fatal(err)
+	}
+
+	// 2. Setup application dependencies
+	app := models.New(db)
+	_ = app // To avoid "declared and not used" error for now
 
 	// 3. Register routes
 	mux := http.NewServeMux()
-	// mux.HandleFunc("/", handlers.Home)
-	// mux.HandleFunc("/post/create", handlers.PostCreate)
+	mux.HandleFunc("/", handlers.Home)
+	mux.HandleFunc("/post/view", handlers.PostView)
 
 	// 4. Start server
 	log.Println("Starting server on :8080")
-	err := http.ListenAndServe(":8080", mux)
+	err = http.ListenAndServe(":8080", mux)
 	log.Fatal(err)
 }
