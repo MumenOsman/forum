@@ -33,16 +33,25 @@ func main() {
 	}
 
 	// 2. Setup application dependencies
-	app := models.New(db)
-	_ = app // To avoid "declared and not used" error for now
+	app := &handlers.Application{
+		Models: models.New(db),
+	}
 
 	// 3. Register routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handlers.Home)
-	mux.HandleFunc("/post/view", handlers.PostView)
+
+	// Create a file server which serves files out of the "ui/static" dir.
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
+	// Register application routes.
+	mux.HandleFunc("/", app.Home)
+	mux.HandleFunc("/post/view", app.PostView)
+	mux.HandleFunc("/post/create", app.PostCreate)
 
 	// 4. Start server
 	log.Println("Starting server on :8080")
 	err = http.ListenAndServe(":8080", mux)
+
 	log.Fatal(err)
 }
