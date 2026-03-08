@@ -1,0 +1,121 @@
+{{template "base" .}}
+
+{{define "title"}}Post Detail{{end}}
+
+{{define "main"}}
+    <div class="post-detail">
+        <article class="post-card full-post">
+            <h1 class="post-title">{{.Post.Title}}</h1>
+            <div class="post-meta">
+                By 👤 {{.Post.Username}} | 📅 {{.Post.CreatedAt}}
+                <div class="post-categories">
+                    {{range .Post.Categories}}
+                        <span class="category-tag">{{.Name}}</span>
+                    {{end}}
+                </div>
+            </div>
+            
+            <div class="post-content">
+                {{.Post.Content}}
+            </div>
+
+            <div class="post-actions">
+                <button class="btn-vote like-btn {{if .Post.UserLiked}}active{{end}}">👍 {{.Post.Likes}}</button>
+                <button class="btn-vote dislike-btn {{if .Post.UserDisliked}}active{{end}}">👎 {{.Post.Dislikes}}</button>
+            </div>
+        </article>
+
+        <section class="comments-section">
+            <h3>{{len .Post.Comments}} Comments</h3>
+            
+            {{if .IsAuthenticated}}
+                <form action="/comment/create" method="POST" class="comment-form">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <textarea name="content" placeholder="Add to the discussion..." required></textarea>
+                    <button type="submit" class="btn btn-primary">Post Comment</button>
+                </form>
+            {{else}}
+                <p class="auth-notice"><a href="/user/login">Login</a> to join the discussion.</p>
+            {{end}}
+
+            <div class="comments-list">
+                {{range .Post.Comments}}
+                    <div class="comment-card">
+                        <div class="comment-meta">
+                            👤 <strong>{{.Username}}</strong> • {{.CreatedAt}}
+                        </div>
+                        <div class="comment-body">
+                            {{.Content}}
+                        </div>
+                        <div class="comment-actions">
+                            <span>👍 {{.Likes}}</span>
+                            <span>👎 {{.Dislikes}}</span>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </section>
+    </div>
+
+    <style>
+        .full-post {
+            border-left: 5px solid var(--primary-color);
+        }
+        .post-categories {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .category-tag {
+            background: #f0f0f0;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        .comments-section {
+            margin-top: 3rem;
+        }
+        .comment-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 1rem 0;
+            min-height: 100px;
+        }
+        .comment-card {
+            background: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .comment-meta {
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+        .comment-actions {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 1rem;
+            color: #777;
+        }
+        .btn-vote {
+            background: none;
+            border: 1px solid #ddd;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-vote:hover {
+            border-color: var(--primary-color);
+        }
+        .btn-vote.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+    </style>
+{{end}}

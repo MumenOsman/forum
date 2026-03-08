@@ -1,0 +1,48 @@
+{{template "base" .}}
+
+{{define "title"}}Home{{end}}
+
+{{define "main"}}
+    <div class="home-container">
+        <section class="filters">
+            <h3>Filter Posts</h3>
+            <div class="filter-group">
+                <a href="/" class="btn btn-secondary active">All Posts</a>
+                {{range .Categories}}
+                    <a href="/?category={{.Name}}" class="btn btn-secondary">{{.Name}}</a>
+                {{end}}
+            </div>
+            {{if .IsAuthenticated}}
+                <div class="user-filters">
+                    <a href="/?filter=created" class="btn btn-secondary">My Posts</a>
+                    <a href="/?filter=liked" class="btn btn-secondary">Liked Posts</a>
+                </div>
+            {{end}}
+        </section>
+
+        <hr>
+
+        <section class="post-list">
+            {{if .Posts}}
+                {{range .Posts}}
+                    <article class="post-card">
+                        <h2 class="post-title"><a href="/post/view?id={{.ID}}">{{.Title}}</a></h2>
+                        <div class="post-meta">
+                            By 👤 {{.Username}} | 📅 {{.CreatedAt}}
+                        </div>
+                        <div class="post-content">
+                            {{.Content}}
+                        </div>
+                        <div class="post-actions">
+                            <span class="likes">👍 {{.Likes}}</span>
+                            <span class="dislikes">👎 {{.Dislikes}}</span>
+                            <span class="comments">💬 {{.CommentCount}} Comments</span>
+                        </div>
+                    </article>
+                {{end}}
+            {{else}}
+                <p>No posts found. Be the first to roar!</p>
+            {{end}}
+        </section>
+    </div>
+{{end}}

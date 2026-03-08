@@ -31,13 +31,19 @@ type User struct {
 
 // Post structure for representing a forum post.
 type Post struct {
-	ID        string
-	UserID    string
-	Title     string
-	Content   string
-	Likes     int
-	Dislikes  int
-	CreatedAt string
+	ID           string
+	UserID       string
+	Username     string // For easier display
+	Title        string
+	Content      string
+	Likes        int
+	Dislikes     int
+	CommentCount int // For easier display
+	CreatedAt    string
+	Categories   []*Category // Categories associated with this post
+	Comments     []*Comment  // Comments for detail view
+	UserLiked    bool        // State for current user
+	UserDisliked bool        // State for current user
 }
 
 // Comment structure for representing a comment on a post.

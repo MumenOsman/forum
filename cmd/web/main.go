@@ -33,8 +33,14 @@ func main() {
 	}
 
 	// 2. Setup application dependencies
+	templateCache, err := handlers.NewTemplateCache()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	app := &handlers.Application{
-		Models: models.New(db),
+		Models:        models.New(db),
+		TemplateCache: templateCache,
 	}
 
 	// 3. Register routes
