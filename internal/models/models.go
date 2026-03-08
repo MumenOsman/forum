@@ -3,6 +3,8 @@ package models
 import (
 	"database/sql"
 	"errors"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 /*
@@ -19,6 +21,9 @@ Responsibilities:
 
 // ErrNoRecord is returned when a query returns no rows.
 var ErrNoRecord = errors.New("models: no matching record found")
+
+// ErrInvalidCredentials is returned when email and password don't match.
+var ErrInvalidCredentials = errors.New("models: invalid credentials")
 
 // User structure for representing a user.
 type User struct {
@@ -84,4 +89,30 @@ func (m *AppModel) InsertUser(id, email, username, hashedPassword string) error 
 func (m *AppModel) GetPost(id string) (*Post, error) {
 	// Execute SELECT query here...
 	return nil, ErrNoRecord
+}
+
+// Authenticate checks if an email and password match a database record.
+// It returns the user ID if the credentials are valid.
+func (m *AppModel) Authenticate(email, password string) (string, error) {
+	var id string
+	var hashedPassword string
+
+	stmt := "SELECT id, password FROM users WHERE email = ?"
+	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrInvalidCredentials
+		}
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return "", ErrInvalidCredentials
+		}
+		return "", err
+	}
+
+	return id, nil
 }
