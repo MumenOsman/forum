@@ -1,5 +1,10 @@
 package auth
 
+import (
+	"github.com/gofrs/uuid/v5"
+	"golang.org/x/crypto/bcrypt"
+)
+
 /*
 internal/auth/auth.go
 
@@ -12,14 +17,17 @@ Responsibilities:
 4. Include middleware functions to check session cookies before allowing access to protected routes (like creating a post).
 */
 
-// HashPassword stubs a hashing function.
+// HashPassword securely hashes a password using bcrypt.
 func HashPassword(password string) (string, error) {
-	// e.g., using "golang.org/x/crypto/bcrypt"
-	return "hashed_" + password, nil
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
 }
 
-// GenerateSessionID stubs session ID generation.
-func GenerateSessionID() string {
-	// e.g., using "github.com/gofrs/uuid"
-	return "new-uuid-session-string"
+// GenerateSessionID securely generates a v4 UUID.
+func GenerateSessionID() (string, error) {
+	u, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
 }
