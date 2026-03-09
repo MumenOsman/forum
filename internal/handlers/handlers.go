@@ -75,14 +75,18 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 			return nil, err
 		}
 
-		ts, err = ts.ParseGlob("./ui/html/*.layout.tmpl")
-		if err != nil {
-			return nil, err
+		if matches, err := filepath.Glob("./ui/html/*.layout.tmpl"); err == nil && len(matches) > 0 {
+			ts, err = ts.ParseGlob("./ui/html/*.layout.tmpl")
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		ts, err = ts.ParseGlob("./ui/html/partials/*.partial.tmpl")
-		if err != nil {
-			// Ignore if no partials found, Glob might error if no matches
+		if matches, err := filepath.Glob("./ui/html/partials/*.partial.tmpl"); err == nil && len(matches) > 0 {
+			ts, err = ts.ParseGlob("./ui/html/partials/*.partial.tmpl")
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		cache[name] = ts
