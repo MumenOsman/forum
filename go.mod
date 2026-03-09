@@ -1,6 +1,6 @@
 module literary-lions-forum
 
-go 1.25.3
+go 1.24.0
 
 require (
 	github.com/gofrs/uuid/v5 v5.4.0
