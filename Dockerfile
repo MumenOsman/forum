@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM golang:1.20-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Install gcc and musl-dev to compile CGO for SQLite
 RUN apk add --no-cache gcc musl-dev
