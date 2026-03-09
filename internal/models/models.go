@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -115,4 +116,43 @@ func (m *AppModel) Authenticate(email, password string) (string, error) {
 	}
 
 	return id, nil
+}
+
+// InsertSession adds a new session into the database.
+func (m *AppModel) InsertSession(sessionID, userID string, expiresAt time.Time) error {
+	stmt := `INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`
+	_, err := m.DB.Exec(stmt, sessionID, userID, expiresAt)
+	return err
+}
+
+// DeleteSession removes a session from the database.
+func (m *AppModel) DeleteSession(sessionID string) error {
+	stmt := `DELETE FROM sessions WHERE id = ?`
+	_, err := m.DB.Exec(stmt, sessionID)
+	return err
+}
+
+// GetUserBySession retrieves the user associated with a valid session ID.
+func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
+	var user User
+	stmt := `
+		SELECT u.id, u.email, u.username, u.password, u.created_at
+		FROM users u
+		INNER JOIN sessions s ON u.id = s.user_id
+		WHERE s.id = ? AND s.expires_at > CURRENT_TIMESTAMP`
+
+	err := m.DB.QueryRow(stmt, sessionID).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Username,
+		&user.Password,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+	return &user, nil
 }
