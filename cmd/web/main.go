@@ -54,6 +54,9 @@ func main() {
 	mux.HandleFunc("/", app.Home)
 	mux.HandleFunc("/post/view", app.PostView)
 	mux.HandleFunc("/post/create", app.PostCreate)
+	mux.HandleFunc("/user/signup", app.UserSignup)
+	mux.HandleFunc("/user/login", app.UserLogin)
+	mux.HandleFunc("/user/logout", app.UserLogout)
 
 	// 4. Start server
 	log.Println("Starting server on :8080")
