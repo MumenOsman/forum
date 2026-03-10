@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
+	"literary-lions-forum/internal/auth"
 	"literary-lions-forum/internal/models"
 	"net/http"
 	"path/filepath"
@@ -142,4 +144,129 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	// Placeholder for parsing form data and inserting into DB
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Saving a new post..."))
+}
+
+// UserSignup handles requests to the user signup page ("/user/signup").
+func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		app.render(w, http.StatusOK, "signup.page.tmpl", nil)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	username := r.PostForm.Get("username")
+	email := r.PostForm.Get("email")
+	password := r.PostForm.Get("password")
+
+	hashedPassword, err := auth.HashPassword(password)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	userID, err := auth.GenerateSessionID() // Reusing to generate a UUID for the user ID
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = app.Models.InsertUser(userID, email, username, hashedPassword)
+	if err != nil {
+		// Possibly email/username already taken
+		http.Error(w, "Error saving user properties or user already exists", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+// UserLogin handles requests to the user login page ("/user/login").
+func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		app.render(w, http.StatusOK, "login.page.tmpl", nil)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	email := r.PostForm.Get("email")
+	password := r.PostForm.Get("password")
+
+	userID, err := app.Models.Authenticate(email, password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	sessionID, err := auth.GenerateSessionID()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	expiresAt := time.Now().Add(24 * time.Hour)
+	err = app.Models.InsertSession(sessionID, userID, expiresAt)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		Path:     "/",
+		Expires:  expiresAt,
+		HttpOnly: true,
+	})
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// UserLogout handles requests to log out the user ("/user/logout").
+func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err == nil {
+		_ = app.Models.DeleteSession(cookie.Value)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-1 * time.Hour), // Expire immediately
+		HttpOnly: true,
+	})
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
