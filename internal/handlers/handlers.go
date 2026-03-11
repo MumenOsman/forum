@@ -97,6 +97,19 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 	return cache, nil
 }
 
+// getAuthenticatedUserID is a helper that reads the session cookie to return the UserID, or empty string.
+func (app *Application) getAuthenticatedUserID(r *http.Request) string {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		return ""
+	}
+	user, err := app.Models.GetUserBySession(cookie.Value)
+	if err != nil {
+		return ""
+	}
+	return user.ID
+}
+
 // Home handles requests to the root URL ("/").
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -104,46 +117,149 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Placeholder for fetching posts and categories
-	// posts, err := app.Models.GetLatestPosts()
-	// categories, err := app.Models.GetAllCategories()
+	posts, err := app.Models.GetAllPosts()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
+	userID := app.getAuthenticatedUserID(r)
 	app.render(w, http.StatusOK, "home.page.tmpl", &TemplateData{
-		Posts: []*models.Post{}, // Empty for now
+		Posts:           posts,
+		IsAuthenticated: userID != "",
 	})
 }
 
-// PostView handles requests to view a specific post (e.g., "/post/view?id=1").
+// PostView handles requests to view a specific post (e.g., "/post/view?id=...").
 func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
-	// Extract the 'id' parameter from the query string
 	idStr := r.URL.Query().Get("id")
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil || id < 1 {
+	if idStr == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	// Placeholder: Query the database for the post
-	// post, err := app.Models.GetPost(fmt.Sprintf("%d", id))
-	// if err != nil { ... }
+	post, err := app.Models.GetPostByID(idStr)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Displaying a specific post with ID %d...", id)
+	userID := app.getAuthenticatedUserID(r)
+	app.render(w, http.StatusOK, "view.page.tmpl", &TemplateData{
+		Post:            post,
+		IsAuthenticated: userID != "",
+	})
 }
 
 // PostCreate handles requests to create a new post ("/post/create").
 func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
-	// Only allow POST requests
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		categories, err := app.Models.GetAllCategories()
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		app.render(w, http.StatusOK, "create.page.tmpl", &TemplateData{
+			Categories:      categories,
+			IsAuthenticated: true,
+		})
+		return
+	}
+
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Placeholder for parsing form data and inserting into DB
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Saving a new post..."))
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	categoryStrings := r.PostForm["categories"]
+
+	var categories []int
+	for _, str := range categoryStrings {
+		catID, _ := strconv.Atoi(str)
+		categories = append(categories, catID)
+	}
+
+	if title == "" || content == "" || len(categories) == 0 {
+		http.Error(w, "Bad request: title, content, and at least 1 category required", http.StatusBadRequest)
+		return
+	}
+
+	postID, err := auth.GenerateSessionID() // secure UUID for post ID
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = app.Models.InsertPost(postID, userID, title, content, categories)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// CommentCreate handles requests to create a new comment ("/comment/create").
+func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	postID := r.PostForm.Get("post_id")
+	content := r.PostForm.Get("content")
+
+	if postID == "" || content == "" {
+		http.Error(w, "Bad request: post_id and content required", http.StatusBadRequest)
+		return
+	}
+
+	commentID, err := auth.GenerateSessionID() // secure UUID for comment ID
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = app.Models.InsertComment(commentID, postID, userID, content)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/post/view?id="+postID, http.StatusSeeOther)
 }
 
 // UserSignup handles requests to the user signup page ("/user/signup").

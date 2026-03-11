@@ -1,23 +1,17 @@
 {{template "base" .}}
 
 {{define "main"}}
-    <h2>Latest Posts</h2>
-    {{if .Posts}}
-        <table>
-            <tr>
-                <th>Title</th>
-                <th>Created</th>
-                <th>Likes</th>
-            </tr>
-            {{range .Posts}}
-            <tr>
-                <td><a href='/post/view?id={{.ID}}'>{{.Title}}</a></td>
-                <td>{{.CreatedAt}}</td>
-                <td>{{.Likes}}</td>
-            </tr>
-            {{end}}
-        </table>
-    {{else}}
-        <p>No posts to display...</p>
+<h2>Latest Posts</h2>
+{{if .Posts}}
+    <ul>
+    {{range .Posts}}
+        <li>
+            <a href="/post/view?id={{.ID}}"><strong>{{.Title}}</strong></a> by {{.Username}}
+            <p>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</p>
+        </li>
     {{end}}
+    </ul>
+{{else}}
+    <p>No posts yet! Be the first to start a discussion.</p>
+{{end}}
 {{end}}
