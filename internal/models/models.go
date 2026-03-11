@@ -57,6 +57,7 @@ type Comment struct {
 	ID        string
 	PostID    string
 	UserID    string
+	Username  string // For easier display
 	Content   string
 	Likes     int
 	Dislikes  int
@@ -86,10 +87,138 @@ func (m *AppModel) InsertUser(id, email, username, hashedPassword string) error 
 	return err
 }
 
-// Example Stub for getting post:
-func (m *AppModel) GetPost(id string) (*Post, error) {
-	// Execute SELECT query here...
-	return nil, ErrNoRecord
+// InsertPost inserts a new post into the database.
+func (m *AppModel) InsertPost(postID, userID, title, content string, categoryIDs []int) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt := `INSERT INTO posts (id, user_id, title, content) VALUES (?, ?, ?, ?)`
+	_, err = tx.Exec(stmt, postID, userID, title, content)
+	if err != nil {
+		return err
+	}
+
+	for _, catID := range categoryIDs {
+		catStmt := `INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)`
+		_, err = tx.Exec(catStmt, postID, catID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// GetAllPosts retrieves all posts from the database (for the Home feed).
+func (m *AppModel) GetAllPosts() ([]*Post, error) {
+	stmt := `
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at,
+		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		ORDER BY p.created_at DESC`
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*Post
+	for rows.Next() {
+		var p Post
+		err = rows.Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CreatedAt, &p.CommentCount)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}
+
+// GetAllCategories retrieves all categories.
+func (m *AppModel) GetAllCategories() ([]*Category, error) {
+	stmt := `SELECT id, name FROM categories ORDER BY name ASC`
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []*Category
+	for rows.Next() {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+			return nil, err
+		}
+		categories = append(categories, &c)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return categories, nil
+}
+
+// GetPostByID retrieves a specific post and its associated comments.
+func (m *AppModel) GetPostByID(postID string) (*Post, error) {
+	stmt := `
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		WHERE p.id = ?`
+
+	var p Post
+	err := m.DB.QueryRow(stmt, postID).Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	// Fetch comments
+	cStmt := `
+		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.likes, c.dislikes, c.created_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.post_id = ?
+		ORDER BY c.created_at ASC`
+
+	rows, err := m.DB.Query(cStmt, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c Comment
+		err = rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		p.Comments = append(p.Comments, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// InsertComment adds a comment to a specific post.
+func (m *AppModel) InsertComment(commentID, postID, userID, content string) error {
+	stmt := `INSERT INTO comments (id, post_id, user_id, content) VALUES (?, ?, ?, ?)`
+	_, err := m.DB.Exec(stmt, commentID, postID, userID, content)
+	return err
 }
 
 // Authenticate checks if an email and password match a database record.

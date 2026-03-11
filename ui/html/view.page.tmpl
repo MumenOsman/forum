@@ -1,0 +1,38 @@
+{{template "base" .}}
+
+{{define "main"}}
+<h2>{{.Post.Title}}</h2>
+<p><em>Posted by {{.Post.Username}} on {{.Post.CreatedAt}}</em></p>
+<div style="margin: 20px 0; padding: 10px; border: 1px solid #ccc;">
+    <p>{{.Post.Content}}</p>
+</div>
+<hr>
+<h3>Comments</h3>
+{{if .Post.Comments}}
+    <ul>
+    {{range .Post.Comments}}
+        <li style="margin-bottom: 10px;">
+            <p style="margin: 0;">{{.Content}}</p>
+            <small>- {{.Username}} at {{.CreatedAt}}</small>
+        </li>
+    {{end}}
+    </ul>
+{{else}}
+    <p>No comments yet.</p>
+{{end}}
+
+{{if $.IsAuthenticated}}
+    <h4 style="margin-top: 20px;">Add a Comment</h4>
+    <form action='/comment/create' method='POST'>
+        <input type='hidden' name='post_id' value='{{.Post.ID}}'>
+        <div>
+            <textarea name='content' required rows="3"></textarea>
+        </div>
+        <div>
+            <input type='submit' value='Submit Comment'>
+        </div>
+    </form>
+{{else}}
+    <p style="margin-top: 20px;"><a href="/user/login">Log in</a> to leave a comment.</p>
+{{end}}
+{{end}}
