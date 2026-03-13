@@ -7,7 +7,17 @@
     {{range .Posts}}
         <li>
             <a href="/post/view?id={{.ID}}"><strong>{{.Title}}</strong></a> by {{.Username}}
-            <p>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</p>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                <span>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</span>
+                {{if $.IsAuthenticated}}
+                <form action="/vote" method="POST" style="display:inline;">
+                    <input type="hidden" name="target_id" value="{{.ID}}">
+                    <input type="hidden" name="target_type" value="post">
+                    <button type="submit" name="vote_type" value="1">👍</button>
+                    <button type="submit" name="vote_type" value="-1">👎</button>
+                </form>
+                {{end}}
+            </div>
         </li>
     {{end}}
     </ul>

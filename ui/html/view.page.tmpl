@@ -5,15 +5,37 @@
 <p><em>Posted by {{.Post.Username}} on {{.Post.CreatedAt}}</em></p>
 <div style="margin: 20px 0; padding: 10px; border: 1px solid #ccc;">
     <p>{{.Post.Content}}</p>
+    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+        <span>Likes: {{.Post.Likes}} | Dislikes: {{.Post.Dislikes}}</span>
+        {{if $.IsAuthenticated}}
+        <form action="/vote" method="POST" style="display:inline;">
+            <input type="hidden" name="target_id" value="{{.Post.ID}}">
+            <input type="hidden" name="target_type" value="post">
+            <button type="submit" name="vote_type" value="1">👍</button>
+            <button type="submit" name="vote_type" value="-1">👎</button>
+        </form>
+        {{end}}
+    </div>
 </div>
 <hr>
 <h3>Comments</h3>
 {{if .Post.Comments}}
     <ul>
     {{range .Post.Comments}}
-        <li style="margin-bottom: 10px;">
+        <li style="margin-bottom: 15px;">
             <p style="margin: 0;">{{.Content}}</p>
-            <small>- {{.Username}} at {{.CreatedAt}}</small>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                <small>- {{.Username}} at {{.CreatedAt}}</small>
+                <small> | Likes: {{.Likes}} | Dislikes: {{.Dislikes}}</small>
+                {{if $.IsAuthenticated}}
+                <form action="/vote" method="POST" style="display:inline;">
+                    <input type="hidden" name="target_id" value="{{.ID}}">
+                    <input type="hidden" name="target_type" value="comment">
+                    <button type="submit" name="vote_type" value="1" style="font-size: 0.8em;">👍</button>
+                    <button type="submit" name="vote_type" value="-1" style="font-size: 0.8em;">👎</button>
+                </form>
+                {{end}}
+            </div>
         </li>
     {{end}}
     </ul>
