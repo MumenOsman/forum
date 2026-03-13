@@ -285,3 +285,74 @@ func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
 	}
 	return &user, nil
 }
+
+// InsertOrUpdateVote registers a user's vote on a specific post or comment.
+func (m *AppModel) InsertOrUpdateVote(userID, targetID, targetType string, voteType int) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Check if the user has already voted on this specific target
+	var existingVote int
+	stmtCheck := `SELECT vote_type FROM likes_dislikes WHERE user_id = ? AND target_id = ? AND target_type = ?`
+	err = tx.QueryRow(stmtCheck, userID, targetID, targetType).Scan(&existingVote)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// User hasn't voted yet = Insert the new vote
+			stmtInsert := `INSERT INTO likes_dislikes (user_id, target_id, target_type, vote_type) VALUES (?, ?, ?, ?)`
+			_, err = tx.Exec(stmtInsert, userID, targetID, targetType, voteType)
+			if err != nil {
+				return err
+			}
+
+			// Increment the target
+			incrementTarget(tx, targetID, targetType, voteType, 1)
+		} else {
+			return err
+		}
+	} else {
+		if existingVote == voteType {
+			// User clicked the exact same button they already pressed = Unlike/Undislike
+			stmtDelete := `DELETE FROM likes_dislikes WHERE user_id = ? AND target_id = ? AND target_type = ?`
+			_, err = tx.Exec(stmtDelete, userID, targetID, targetType)
+			if err != nil {
+				return err
+			}
+
+			// Decrement the target
+			incrementTarget(tx, targetID, targetType, existingVote, -1)
+		} else {
+			// User clicked the opposite button = Swap their vote
+			stmtUpdate := `UPDATE likes_dislikes SET vote_type = ? WHERE user_id = ? AND target_id = ? AND target_type = ?`
+			_, err = tx.Exec(stmtUpdate, voteType, userID, targetID, targetType)
+			if err != nil {
+				return err
+			}
+
+			// Decrement the old vote, Increment the new vote
+			incrementTarget(tx, targetID, targetType, existingVote, -1)
+			incrementTarget(tx, targetID, targetType, voteType, 1)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// incrementTarget is a helper to update the total counts on the raw posts or comments table
+func incrementTarget(tx *sql.Tx, targetID, targetType string, voteType, increment int) {
+	table := "posts"
+	if targetType == "comment" {
+		table = "comments"
+	}
+
+	column := "likes"
+	if voteType == -1 {
+		column = "dislikes"
+	}
+
+	stmt := `UPDATE ` + table + ` SET ` + column + ` = ` + column + ` + ? WHERE id = ?`
+	tx.Exec(stmt, increment, targetID)
+}

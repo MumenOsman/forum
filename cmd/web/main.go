@@ -58,6 +58,7 @@ func main() {
 	mux.HandleFunc("/user/login", app.UserLogin)
 	mux.HandleFunc("/user/logout", app.UserLogout)
 	mux.HandleFunc("/comment/create", app.CommentCreate)
+	mux.HandleFunc("/vote", app.VoteHandler)
 
 	// 4. Start server
 	log.Println("Starting server on :8080")

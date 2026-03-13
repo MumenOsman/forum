@@ -386,3 +386,52 @@ func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// VoteHandler handles requests to upvote or downvote a post or comment ("/vote").
+func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	targetID := r.PostForm.Get("target_id")
+	targetType := r.PostForm.Get("target_type")
+	voteTypeStr := r.PostForm.Get("vote_type")
+
+	if targetID == "" || (targetType != "post" && targetType != "comment") || (voteTypeStr != "1" && voteTypeStr != "-1") {
+		http.Error(w, "Bad Request: invalid vote parameters", http.StatusBadRequest)
+		return
+	}
+
+	voteType, err := strconv.Atoi(voteTypeStr)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	err = app.Models.InsertOrUpdateVote(userID, targetID, targetType, voteType)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect back to the page the user came from (or fallback to Home)
+	referer := r.Header.Get("Referer")
+	if referer == "" {
+		referer = "/"
+	}
+	http.Redirect(w, r, referer, http.StatusSeeOther)
+}
