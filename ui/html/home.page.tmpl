@@ -1,27 +1,52 @@
 {{template "base" .}}
 
 {{define "main"}}
-<h2>Latest Posts</h2>
-{{if .Posts}}
-    <ul>
-    {{range .Posts}}
-        <li>
-            <a href="/post/view?id={{.ID}}"><strong>{{.Title}}</strong></a> by {{.Username}}
-            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                <span>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</span>
-                {{if $.IsAuthenticated}}
-                <form action="/vote" method="POST" style="display:inline;">
-                    <input type="hidden" name="target_id" value="{{.ID}}">
-                    <input type="hidden" name="target_type" value="post">
-                    <button type="submit" name="vote_type" value="1">👍</button>
-                    <button type="submit" name="vote_type" value="-1">👎</button>
-                </form>
-                {{end}}
-            </div>
-        </li>
-    {{end}}
-    </ul>
-{{else}}
-    <p>No posts yet! Be the first to start a discussion.</p>
-{{end}}
+<div style="display: flex; gap: 20px;">
+    <!-- Sidebar for Filters -->
+    <aside style="min-width: 200px; padding-right: 20px; border-right: 1px solid #ccc;">
+        <h3>Filters</h3>
+        <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 15px;"><a href="/">All Posts</a></li>
+            {{if $.IsAuthenticated}}
+            <li style="margin-bottom: 10px;"><a href="/?authored=true">My Created Posts</a></li>
+            <li style="margin-bottom: 10px;"><a href="/?liked=true">My Liked Posts</a></li>
+            {{end}}
+        </ul>
+
+        <h3>Categories</h3>
+        <ul style="list-style: none; padding: 0;">
+        {{range .Categories}}
+            <li style="margin-bottom: 5px;"><a href="/?category={{.ID}}">{{.Name}}</a></li>
+        {{end}}
+        </ul>
+    </aside>
+
+    <!-- Main Feed -->
+    <section style="flex-grow: 1;">
+        <h2>Posts</h2>
+        {{if .Posts}}
+            <ul style="list-style: none; padding: 0;">
+            {{range .Posts}}
+                <li style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee;">
+                    <a href="/post/view?id={{.ID}}" style="text-decoration: none; font-size: 1.2em;"><strong>{{.Title}}</strong></a>
+                    <p style="color: #666; margin: 5px 0;">by {{.Username}} on {{.CreatedAt}}</p>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                        <span>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</span>
+                        {{if $.IsAuthenticated}}
+                        <form action="/vote" method="POST" style="display:inline;">
+                            <input type="hidden" name="target_id" value="{{.ID}}">
+                            <input type="hidden" name="target_type" value="post">
+                            <button type="submit" name="vote_type" value="1" style="cursor: pointer;">👍</button>
+                            <button type="submit" name="vote_type" value="-1" style="cursor: pointer;">👎</button>
+                        </form>
+                        {{end}}
+                    </div>
+                </li>
+            {{end}}
+            </ul>
+        {{else}}
+            <p>No posts found. Start a new discussion!</p>
+        {{end}}
+    </section>
+</div>
 {{end}}

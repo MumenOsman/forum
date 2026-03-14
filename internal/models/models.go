@@ -112,16 +112,52 @@ func (m *AppModel) InsertPost(postID, userID, title, content string, categoryIDs
 	return tx.Commit()
 }
 
-// GetAllPosts retrieves all posts from the database (for the Home feed).
-func (m *AppModel) GetAllPosts() ([]*Post, error) {
+// GetFilteredPosts retrieves posts based on optional filters.
+func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy string) ([]*Post, error) {
 	stmt := `
 		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at,
 		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count
 		FROM posts p
-		JOIN users u ON p.user_id = u.id
-		ORDER BY p.created_at DESC`
+		JOIN users u ON p.user_id = u.id`
 
-	rows, err := m.DB.Query(stmt)
+	var args []interface{}
+	var joins []string
+	var where []string
+
+	if categoryID != "" {
+		joins = append(joins, "INNER JOIN post_categories pc ON p.id = pc.post_id")
+		where = append(where, "pc.category_id = ?")
+		args = append(args, categoryID)
+	}
+
+	if likedBy != "" {
+		joins = append(joins, "INNER JOIN likes_dislikes ld ON p.id = ld.target_id")
+		where = append(where, "ld.user_id = ? AND ld.target_type = 'post' AND ld.vote_type = 1")
+		args = append(args, likedBy)
+	}
+
+	for _, j := range joins {
+		stmt += " " + j
+	}
+
+	if authoredBy != "" {
+		where = append(where, "p.user_id = ?")
+		args = append(args, authoredBy)
+	}
+
+	if len(where) > 0 {
+		stmt += " WHERE "
+		for i, w := range where {
+			if i > 0 {
+				stmt += " AND "
+			}
+			stmt += w
+		}
+	}
+
+	stmt += ` ORDER BY p.created_at DESC`
+
+	rows, err := m.DB.Query(stmt, args...)
 	if err != nil {
 		return nil, err
 	}
