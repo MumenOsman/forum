@@ -117,15 +117,43 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := app.Models.GetAllPosts()
+	userID := app.getAuthenticatedUserID(r)
+
+	categoryID := r.URL.Query().Get("category")
+	authored := r.URL.Query().Get("authored")
+	liked := r.URL.Query().Get("liked")
+
+	var authoredBy, likedBy string
+	if authored == "true" {
+		if userID == "" {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+		authoredBy = userID
+	}
+	if liked == "true" {
+		if userID == "" {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+		likedBy = userID
+	}
+
+	posts, err := app.Models.GetFilteredPosts(categoryID, authoredBy, likedBy)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	userID := app.getAuthenticatedUserID(r)
+	categories, err := app.Models.GetAllCategories()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	app.render(w, http.StatusOK, "home.page.tmpl", &TemplateData{
 		Posts:           posts,
+		Categories:      categories,
 		IsAuthenticated: userID != "",
 	})
 }
