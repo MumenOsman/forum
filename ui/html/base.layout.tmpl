@@ -3,31 +3,37 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Literary Lions Forum</title>
         <link rel='stylesheet' href='/static/css/style.css'>
     </head>
     <body>
-        <header>
+        <header class="glass">
             <h1><a href='/'>Literary Lions Forum</a></h1>
+            <nav>
+                <a href='/'>Home</a>
+                {{if .IsAuthenticated}}
+                    <a href='/post/create' class="btn btn-primary">Create Post</a>
+                    <form action='/user/logout' method='POST' style="margin: 0;">
+                        <button class="btn btn-secondary" style="background: none; border: 1px solid var(--border); color: var(--text-main);">Logout</button>
+                    </form>
+                {{else}}
+                    <a href='/user/login'>Login</a>
+                    <a href='/user/signup' class="btn btn-primary">Signup</a>
+                {{end}}
+                <button id="theme-toggle" class="vote-btn" title="Toggle Dark Mode">🌓</button>
+            </nav>
         </header>
-        <nav>
-            <a href='/'>Home</a>
-            {{if .IsAuthenticated}}
-                <a href='/post/create'>Create Post</a>
-                <form action='/user/logout' method='POST'>
-                    <button>Logout</button>
-                </form>
-            {{else}}
-                <a href='/user/signup'>Signup</a>
-                <a href='/user/login'>Login</a>
-            {{end}}
-        </nav>
+        
         <main>
             {{template "main" .}}
         </main>
+
         <footer>
-            Powered by Go in {{.CurrentYear}}
+            <p>Literary Lions &copy; {{.CurrentYear}} • Dedicated to the love of reading</p>
         </footer>
+
+        <script src="/static/js/app.js"></script>
     </body>
 </html>
 {{end}}

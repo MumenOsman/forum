@@ -1,28 +1,49 @@
 {{template "base" .}}
 
 {{define "main"}}
-<h2>Create a New Post</h2>
-<form action='/post/create' method='POST'>
-    <div>
-        <label>Title:</label>
-        <input type='text' name='title' required>
-    </div>
-    <div>
-        <label>Content:</label>
-        <textarea name='content' required rows="5"></textarea>
-    </div>
-    <div>
-        <label>Categories (Select at least one):</label>
-        <div style="display: flex; gap: 10px;">
-        {{range .Categories}}
-            <label>
-                <input type="checkbox" name="categories" value="{{.ID}}"> {{.Name}}
-            </label>
-        {{end}}
+<div class="glass" style="max-width: 800px; margin: 0 auto; padding: 2.5rem; border-radius: var(--radius);">
+    <h2 style="margin-bottom: 2rem; font-size: 1.75rem; color: var(--primary);">Create a New Discussion</h2>
+    
+    <form action='/post/create' method='POST' class="modern-form">
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted);">Discussion Title</label>
+            <input type='text' name='title' required placeholder="What's on your mind?" 
+                   style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); outline: none; transition: border-color 0.2s;">
         </div>
-    </div>
-    <div style="margin-top: 15px;">
-        <input type='submit' value='Publish Post'>
-    </div>
-</form>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted);">Content</label>
+            <div id="rich-editor" contenteditable="true" 
+                 style="min-height: 250px; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); outline: none;">
+                Start typing your masterpiece...
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Use the toolbar above for formatting.</p>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-muted);">Select Categories</label>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            {{range .Categories}}
+                <label class="glass" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); font-size: 0.875rem;">
+                    <input type="checkbox" name="categories" value="{{.ID}}" style="accent-color: var(--primary);"> {{.Name}}
+                </label>
+            {{end}}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="/" class="btn btn-secondary" style="background: none; border: 1px solid var(--border);">Cancel</a>
+            <button type='submit' class="btn btn-primary">Publish Discussion</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .modern-form input:focus { border-color: var(--primary) !important; }
+    #rich-editor:focus { border-color: var(--primary) !important; }
+    [contenteditable="true"]:empty:before {
+        content: attr(placeholder);
+        color: var(--text-muted);
+    }
+</style>
 {{end}}

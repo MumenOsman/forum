@@ -1,51 +1,69 @@
 {{template "base" .}}
 
 {{define "main"}}
-<div style="display: flex; gap: 20px;">
+<div class="forum-container">
     <!-- Sidebar for Filters -->
-    <aside style="min-width: 200px; padding-right: 20px; border-right: 1px solid #ccc;">
-        <h3>Filters</h3>
-        <ul style="list-style: none; padding: 0;">
-            <li style="margin-bottom: 15px;"><a href="/">All Posts</a></li>
-            {{if $.IsAuthenticated}}
-            <li style="margin-bottom: 10px;"><a href="/?authored=true">My Created Posts</a></li>
-            <li style="margin-bottom: 10px;"><a href="/?liked=true">My Liked Posts</a></li>
-            {{end}}
-        </ul>
+    <aside class="sidebar">
+        <div>
+            <h3>Explore</h3>
+            <ul>
+                <li><a href="/">All Discussions</a></li>
+                {{if $.IsAuthenticated}}
+                <li><a href="/?authored=true">My Posts</a></li>
+                <li><a href="/?liked=true">Liked by Me</a></li>
+                {{end}}
+            </ul>
+        </div>
 
-        <h3>Categories</h3>
-        <ul style="list-style: none; padding: 0;">
-        {{range .Categories}}
-            <li style="margin-bottom: 5px;"><a href="/?category={{.ID}}">{{.Name}}</a></li>
-        {{end}}
-        </ul>
+        <div>
+            <h3>Categories</h3>
+            <ul>
+            {{range .Categories}}
+                <li><a href="/?category={{.ID}}">{{.Name}}</a></li>
+            {{end}}
+            </ul>
+        </div>
     </aside>
 
     <!-- Main Feed -->
-    <section style="flex-grow: 1;">
-        <h2>Posts</h2>
+    <section class="feed">
+        <h2>Latest Conversations</h2>
         {{if .Posts}}
-            <ul style="list-style: none; padding: 0;">
+            <div class="post-list">
             {{range .Posts}}
-                <li style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee;">
-                    <a href="/post/view?id={{.ID}}" style="text-decoration: none; font-size: 1.2em;"><strong>{{.Title}}</strong></a>
-                    <p style="color: #666; margin: 5px 0;">by {{.Username}} on {{.CreatedAt}}</p>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                        <span>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</span>
+                <article class="post-card">
+                    <a href="/post/view?id={{.ID}}">{{.Title}}</a>
+                    <div class="post-meta">
+                        by <strong>{{.Username}}</strong> • {{.CreatedAt.Format "Jan 02, 2006"}}
+                    </div>
+                    <div class="post-content-preview" style="font-size: 0.9375rem; color: var(--text-main); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                        {{.Content}}
+                    </div>
+                    <div class="post-stats">
+                        <span>💬 {{.CommentCount}} comments</span>
+                        <div class="vote-controls">
+                            <span title="Likes">👍 {{.Likes}}</span>
+                            <span title="Dislikes">👎 {{.Dislikes}}</span>
+                        </div>
                         {{if $.IsAuthenticated}}
                         <form action="/vote" method="POST" style="display:inline;">
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="post">
-                            <button type="submit" name="vote_type" value="1" style="cursor: pointer;">👍</button>
-                            <button type="submit" name="vote_type" value="-1" style="cursor: pointer;">👎</button>
+                            <button type="submit" name="vote_type" value="1" class="vote-btn">👍</button>
+                            <button type="submit" name="vote_type" value="-1" class="vote-btn">👎</button>
                         </form>
                         {{end}}
                     </div>
-                </li>
+                </article>
             {{end}}
-            </ul>
+            </div>
         {{else}}
-            <p>No posts found. Start a new discussion!</p>
+            <div class="glass" style="padding: 2rem; border-radius: var(--radius); text-align: center;">
+                <p>No posts found. Why not start a new discussion?</p>
+                {{if .IsAuthenticated}}
+                <a href="/post/create" class="btn btn-primary" style="margin-top: 1rem;">Create First Post</a>
+                {{end}}
+            </div>
         {{end}}
     </section>
 </div>
