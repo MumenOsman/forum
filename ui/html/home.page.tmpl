@@ -4,6 +4,11 @@
 <div style="display: flex; gap: 20px;">
     <!-- Sidebar for Filters -->
     <aside style="min-width: 200px; padding-right: 20px; border-right: 1px solid #ccc;">
+        <h3>Search</h3>
+        <form action="/" method="GET" style="display: flex; gap: 5px; flex-direction: column; margin-bottom: 20px;">
+            <input type="text" name="q" placeholder="Keywords..." required style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <button type="submit" style="padding: 8px; cursor: pointer;">Find Topics</button>
+        </form>
         <h3>Filters</h3>
         <ul style="list-style: none; padding: 0;">
             <li style="margin-bottom: 15px;"><a href="/">All Posts</a></li>
@@ -29,7 +34,7 @@
             {{range .Posts}}
                 <li style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee;">
                     <a href="/post/view?id={{.ID}}" style="text-decoration: none; font-size: 1.2em;"><strong>{{.Title}}</strong></a>
-                    <p style="color: #666; margin: 5px 0;">by {{.Username}} on {{.CreatedAt}}</p>
+                    <p style="color: #666; margin: 5px 0;">by <a href="/user/profile?id={{.UserID}}">{{.Username}}</a> on {{.CreatedAt}}</p>
                     <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                         <span>Likes: {{.Likes}} | Dislikes: {{.Dislikes}} | Comments: {{.CommentCount}}</span>
                         {{if $.IsAuthenticated}}

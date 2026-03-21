@@ -1,6 +1,12 @@
 {{template "base" .}}
 
 {{define "main"}}
+<h2>Login</h2>
+{{if .ErrorMessage}}
+    <div style="background-color: #f8d7da; color: #721c24; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c6cb; border-radius: 4px; max-width: 400px;">
+        <strong>Error:</strong> {{.ErrorMessage}}
+    </div>
+{{end}}
 <form action='/user/login' method='POST' novalidate>
     <div>
         <label>Email:</label>

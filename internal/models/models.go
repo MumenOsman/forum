@@ -113,7 +113,7 @@ func (m *AppModel) InsertPost(postID, userID, title, content string, categoryIDs
 }
 
 // GetFilteredPosts retrieves posts based on optional filters.
-func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy string) ([]*Post, error) {
+func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery string) ([]*Post, error) {
 	stmt := `
 		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at,
 		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count
@@ -143,6 +143,11 @@ func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy string) ([]*
 	if authoredBy != "" {
 		where = append(where, "p.user_id = ?")
 		args = append(args, authoredBy)
+	}
+
+	if searchQuery != "" {
+		where = append(where, "(p.title LIKE '%' || ? || '%' COLLATE NOCASE OR p.content LIKE '%' || ? || '%' COLLATE NOCASE)")
+		args = append(args, searchQuery, searchQuery)
 	}
 
 	if len(where) > 0 {
@@ -313,6 +318,20 @@ func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
 		&user.Password,
 		&user.CreatedAt,
 	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetUserByID retrieves a specific user's details.
+func (m *AppModel) GetUserByID(userID string) (*User, error) {
+	stmt := `SELECT id, email, username, created_at FROM users WHERE id = ?`
+	var user User
+	err := m.DB.QueryRow(stmt, userID).Scan(&user.ID, &user.Email, &user.Username, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
