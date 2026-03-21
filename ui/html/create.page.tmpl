@@ -1,49 +1,114 @@
 {{template "base" .}}
 
 {{define "main"}}
-<div class="glass" style="max-width: 800px; margin: 0 auto; padding: 2.5rem; border-radius: var(--radius);">
-    <h2 style="margin-bottom: 2rem; font-size: 1.75rem; color: var(--primary);">Create a New Discussion</h2>
-    
-    <form action='/post/create' method='POST' class="modern-form">
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted);">Discussion Title</label>
-            <input type='text' name='title' required placeholder="What's on your mind?" 
-                   style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); outline: none; transition: border-color 0.2s;">
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted);">Content</label>
-            <div id="rich-editor" contenteditable="true" 
-                 style="min-height: 250px; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); outline: none;">
-                Start typing your masterpiece...
+<div class="flex min-h-screen pt-20 w-full">
+    <!-- SideNavBar Component -->
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex">
+        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                <span class="material-symbols-outlined text-tertiary">person</span>
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Use the toolbar above for formatting.</p>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none">Scholar</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1">Archivist</p>
+            </div>
         </div>
-
-        <div style="margin-bottom: 2rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-muted);">Select Categories</label>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        
+        <nav class="flex-1 space-y-1">
+            <form action="/" method="GET" class="m-0">
+                {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span class="font-label">All Categories</span>
+                </button>
+            </form>
             {{range .Categories}}
-                <label class="glass" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); font-size: 0.875rem;">
-                    <input type="checkbox" name="categories" value="{{.ID}}" style="accent-color: var(--primary);"> {{.Name}}
-                </label>
+            <form action="/" method="GET" class="m-0">
+                {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span class="font-label">{{.Name}}</span>
+                </button>
+            </form>
             {{end}}
-            </div>
+        </nav>
+        
+        <div class="pt-6 pb-2">
+            <a href="/post/create" class="w-full flex items-center justify-center gap-2 py-3 bg-[#222a3d] text-[#fabd00] rounded-md font-bold hover:brightness-125 shadow-lg border border-tertiary/20 no-underline transition-all active:scale-95">
+                <span class="material-symbols-outlined">add_circle</span>
+                <span class="font-label">Create Post</span>
+            </a>
         </div>
+    </aside>
 
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <a href="/" class="btn btn-secondary" style="background: none; border: 1px solid var(--border);">Cancel</a>
-            <button type='submit' class="btn btn-primary">Publish Discussion</button>
-        </div>
-    </form>
+    <!-- Main Content Area -->
+    <main class="flex-1 lg:ml-64 p-6 md:p-12 max-w-5xl mx-auto w-full">
+        <header class="mb-12">
+            <p class="font-label text-tertiary text-xs tracking-[0.2em] uppercase mb-2">New Contribution</p>
+            <h1 class="font-headline text-5xl md:text-6xl text-on-surface font-light italic">Draft a New Discourse</h1>
+        </header>
+        
+        <form action="/post/create" method="POST" class="space-y-12 w-full">
+            {{if .ErrorMessage}}
+                <div class="px-6 py-4 rounded bg-error/20 border-l-4 border-error text-error font-bold text-sm">
+                    {{.ErrorMessage}}
+                </div>
+            {{end}}
+
+            <!-- Post Title -->
+            <section class="space-y-4">
+                <label class="font-label text-sm text-on-surface-variant flex items-center gap-2" for="title">
+                    <span class="material-symbols-outlined text-xs">title</span>
+                    POST TITLE
+                </label>
+                <input class="w-full bg-transparent border-0 border-b border-outline-variant/30 py-4 text-3xl font-headline text-on-surface focus:outline-none focus:ring-0 focus:border-primary focus:bg-surface-container-highest/10 transition-all placeholder:text-on-surface-variant/20" id="title" name="title" placeholder="The Echoes of Modernism in 21st Century Prose..." type="text" required />
+            </section>
+            
+            <!-- Post Content -->
+            <section class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="font-label text-sm text-on-surface-variant flex items-center gap-2" for="content">
+                        <span class="material-symbols-outlined text-xs">edit_note</span>
+                        CONTENT
+                    </label>
+                </div>
+                <div class="relative group">
+                    <textarea class="w-full bg-surface-container-low/40 rounded-xl border border-outline-variant/15 p-8 text-lg font-body text-on-surface leading-relaxed focus:outline-none focus:border-primary/50 focus:ring-0 backdrop-blur-sm transition-all placeholder:text-on-surface-variant/20 scrollbar-thin scrollbar-thumb-outline-variant" id="content" name="content" placeholder="Begin your analysis here. Let the ink flow naturally..." rows="12" required></textarea>
+                </div>
+            </section>
+            
+            <!-- Categories -->
+            <section class="space-y-6">
+                <label class="font-label text-sm text-on-surface-variant flex items-center gap-2">
+                    <span class="material-symbols-outlined text-xs">category</span>
+                    ASSIGN CATEGORIES
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {{range .Categories}}
+                    <label class="group flex items-center p-4 rounded-xl bg-surface-container-low border border-outline-variant/10 hover:border-tertiary/30 cursor-pointer transition-all">
+                        <input class="w-5 h-5 rounded border-outline-variant bg-surface-container text-tertiary focus:ring-tertiary/20 focus:ring-offset-0 transition-all cursor-pointer" type="checkbox" name="categories" value="{{.ID}}"/>
+                        <span class="ml-3 font-label text-sm text-on-surface-variant group-hover:text-on-surface transition-colors cursor-pointer">{{.Name}}</span>
+                    </label>
+                    {{end}}
+                </div>
+            </section>
+            
+            <!-- Actions -->
+            <footer class="pt-8 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-tertiary">info</span>
+                    <p class="text-xs font-label text-on-surface-variant/60 max-w-xs">
+                        Posts are archived in the Library upon publication.
+                    </p>
+                </div>
+                <div class="flex gap-4 w-full md:w-auto">
+                    <button class="flex-1 md:flex-none flex items-center justify-center gap-3 px-10 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-md shadow-2xl hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer" type="submit">
+                        <span class="material-symbols-outlined">auto_stories</span>
+                        PUBLISH POST
+                    </button>
+                </div>
+            </footer>
+        </form>
+    </main>
 </div>
-
-<style>
-    .modern-form input:focus { border-color: var(--primary) !important; }
-    #rich-editor:focus { border-color: var(--primary) !important; }
-    [contenteditable="true"]:empty:before {
-        content: attr(placeholder);
-        color: var(--text-muted);
-    }
-</style>
 {{end}}

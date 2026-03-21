@@ -114,7 +114,7 @@ func InitSchema(db *sql.DB) error {
 
 // initCategories is a helper to ensure at least some categories exist.
 func initCategories(db *sql.DB) {
-	categories := []string{"General", "Fiction", "Non-Fiction", "Sci-Fi", "Mystery", "Romance"}
+	categories := []string{"General", "Fiction", "Non-Fiction", "Sci-Fi", "Mystery", "Romance", "Historical Fiction", "Biography & Memoirs", "Fantasy"}
 	for _, cat := range categories {
 		query := "INSERT OR IGNORE INTO categories (name) VALUES (?)"
 		_, err := db.Exec(query, cat)

@@ -33,6 +33,10 @@ type TemplateData struct {
 	IsAuthenticated bool
 	User            *models.User
 	ErrorMessage    string
+	SearchQuery     string
+	Profile         *models.User
+	Comments        []*models.Comment
+	ErrorCode       int
 }
 
 // Application holds the application-wide dependencies for the handlers.
@@ -198,8 +202,10 @@ func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := app.getAuthenticatedUserID(r)
+	categories, _ := app.Models.GetAllCategories()
 	app.render(w, http.StatusOK, "view.page.tmpl", &TemplateData{
 		Post:            post,
+		Categories:      categories,
 		IsAuthenticated: userID != "",
 	})
 }
@@ -512,9 +518,11 @@ func (app *Application) UserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentUserID := app.getAuthenticatedUserID(r)
+	categories, _ := app.Models.GetAllCategories()
 	app.render(w, http.StatusOK, "profile.page.tmpl", &TemplateData{
 		User:            user,
 		Posts:           posts,
+		Categories:      categories,
 		IsAuthenticated: currentUserID != "",
 	})
 }

@@ -1,78 +1,144 @@
 {{template "base" .}}
 
 {{define "main"}}
-<div class="forum-container">
-    <!-- Sidebar for Filters -->
-    <aside class="sidebar">
-        <div style="margin-bottom: 20px;">
-            <h3>Search</h3>
-            <form action="/" method="GET" style="display: flex; gap: 5px; flex-direction: column;">
-                <input type="text" name="q" placeholder="Keywords..." required style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-                <button type="submit" class="btn btn-primary" style="padding: 8px;">Find Topics</button>
+<div class="flex min-h-screen pt-20">
+    <!-- SideNavBar Component -->
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex">
+        {{if .IsAuthenticated}}
+        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                <span class="material-symbols-outlined text-tertiary">person</span>
+            </div>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none">Scholar</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1">Archivist</p>
+            </div>
+        </div>
+        {{end}}
+
+        <form action="/" method="GET" class="px-2 mb-4 mt-2">
+            <div class="relative group">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors text-sm">search</span>
+                <input type="text" name="q" placeholder="Search archive..." value="{{.SearchQuery}}" class="w-full bg-[#171f33] border border-outline-variant/20 rounded-md py-2 pl-9 pr-3 text-sm text-on-surface font-label focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/40">
+            </div>
+        </form>
+        
+        <nav class="flex-1 space-y-1">
+            <form action="/" method="GET" class="m-0">
+                {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span class="font-label">All Categories</span>
+                </button>
             </form>
-        </div>
-
-        <div>
-            <h3>Explore</h3>
-            <ul>
-                <li><a href="/">All Discussions</a></li>
-                {{if $.IsAuthenticated}}
-                <li><a href="/?authored=true">My Posts</a></li>
-                <li><a href="/?liked=true">Liked by Me</a></li>
-                {{end}}
-            </ul>
-        </div>
-
-        <div>
-            <h3>Categories</h3>
-            <ul>
             {{range .Categories}}
-                <li><a href="/?category={{.ID}}">{{.Name}}</a></li>
+            <form action="/" method="GET" class="m-0">
+                {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span class="font-label">{{.Name}}</span>
+                </button>
+            </form>
             {{end}}
-            </ul>
+        </nav>
+        
+        {{if .IsAuthenticated}}
+        <div class="pt-6 pb-2 border-t border-outline-variant/10">
+            <a href="/post/create" class="w-full flex items-center justify-center gap-2 py-3 bg-[#222a3d] text-[#fabd00] rounded-md font-bold hover:brightness-125 shadow-lg border border-tertiary/20 no-underline transition-all active:scale-95">
+                <span class="material-symbols-outlined">add_circle</span>
+                <span class="font-label">Create Post</span>
+            </a>
         </div>
+        {{end}}
     </aside>
 
-    <!-- Main Feed -->
-    <section class="feed">
-        <h2>Latest Conversations</h2>
-        {{if .Posts}}
-            <div class="post-list">
-            {{range .Posts}}
-                <article class="post-card">
-                    <a href="/post/view?id={{.ID}}">{{.Title}}</a>
-                    <div class="post-meta">
-                        by <a href="/user/profile?id={{.UserID}}" style="color: var(--accent-light); text-decoration: none;"><strong>{{.Username}}</strong></a> • {{.CreatedAt.Format "Jan 02, 2006"}}
-                    </div>
-                    <div class="post-content-preview" style="font-size: 0.9375rem; color: var(--text-main); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
-                        {{.Content}}
-                    </div>
-                    <div class="post-stats">
-                        <span>💬 {{.CommentCount}} comments</span>
-                        <div class="vote-controls">
-                            <span title="Likes">👍 {{.Likes}}</span>
-                            <span title="Dislikes">👎 {{.Dislikes}}</span>
-                        </div>
-                        {{if $.IsAuthenticated}}
-                        <form action="/vote" method="POST" style="display:inline;">
-                            <input type="hidden" name="target_id" value="{{.ID}}">
-                            <input type="hidden" name="target_type" value="post">
-                            <button type="submit" name="vote_type" value="1" class="vote-btn">👍</button>
-                            <button type="submit" name="vote_type" value="-1" class="vote-btn">👎</button>
-                        </form>
-                        {{end}}
-                    </div>
-                </article>
-            {{end}}
-            </div>
-        {{else}}
-            <div class="glass" style="padding: 2rem; border-radius: var(--radius); text-align: center;">
-                <p>No posts found. Why not start a new discussion?</p>
-                {{if .IsAuthenticated}}
-                <a href="/post/create" class="btn btn-primary" style="margin-top: 1rem;">Create First Post</a>
+    <!-- Main Content Canvas -->
+    <main class="flex-grow lg:ml-64 px-4 md:px-12 py-8 max-w-4xl mx-auto w-full">
+        <!-- Category Chips -->
+        <section class="mb-10 overflow-x-auto whitespace-nowrap pb-2 no-scrollbar">
+            <div class="flex gap-3">
+                <form action="/" method="GET" class="m-0">
+                    {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
+                    <button type="submit" name="category" value="" class="px-4 py-1.5 rounded-full bg-primary-container text-primary text-xs font-bold tracking-wider cursor-pointer hover:bg-opacity-80 transition-colors border-none">
+                        ALL TOPICS
+                    </button>
+                </form>
+                {{range .Categories}}
+                <form action="/" method="GET" class="m-0">
+                    {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
+                    <button type="submit" name="category" value="{{.ID}}" class="px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold tracking-wider cursor-pointer hover:bg-surface-container-high transition-colors border-none">
+                        {{.Name}}
+                    </button>
+                </form>
                 {{end}}
             </div>
-        {{end}}
-    </section>
+        </section>
+
+        <!-- Post Feed Column -->
+        <div class="space-y-8">
+            {{if not .Posts}}
+            <div class="text-center py-20 bg-surface-container/30 rounded-xl border border-outline-variant/10">
+                <span class="material-symbols-outlined text-4xl text-outline-variant/50 mb-4">search_off</span>
+                <p class="font-headline text-2xl text-on-surface-variant">No discussions found in the archive.</p>
+            </div>
+            {{end}}
+
+            {{range .Posts}}
+            <article class="relative group p-8 rounded-xl bg-surface-container/60 backdrop-blur-md border border-outline-variant/15 hover:border-outline-variant/30 transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full border border-primary/20 bg-surface-container-high flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sm text-primary">person</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <a class="text-sm font-bold text-primary hover:underline" href="/user/profile?id={{.UserID}}">{{.Username}}</a>
+                            <span class="text-[10px] text-on-surface-variant/70 uppercase tracking-widest">{{.CreatedAt.Format "Jan 02, 2006"}}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="/post/view?id={{.ID}}" class="no-underline block group-hover:brightness-110 transition-all">
+                    <h2 class="serif-headline text-3xl font-bold mb-4 text-on-surface leading-tight hover:text-primary transition-colors">{{.Title}}</h2>
+                    <p class="text-on-surface-variant leading-relaxed mb-6 font-body text-lg line-clamp-3">
+                        {{.Content}}
+                    </p>
+                </a>
+                
+                <div class="flex items-center justify-between pt-6 border-t border-outline-variant/10">
+                    <div class="flex items-center gap-6">
+                        <a href="/post/view?id={{.ID}}" class="flex items-center gap-2 group/btn cursor-pointer no-underline">
+                            <span class="material-symbols-outlined text-on-surface-variant group-hover/btn:text-primary transition-colors">chat_bubble_outline</span>
+                            <span class="text-sm font-medium text-on-surface-variant group-hover/btn:text-primary">{{.CommentCount}} Comments</span>
+                        </a>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 bg-surface-container-low/50 px-4 py-2 rounded-full border border-outline-variant/5">
+                        <form action="/vote" method="POST" class="m-0">
+                            <input type="hidden" name="target_id" value="{{.ID}}">
+                            <input type="hidden" name="target_type" value="post">
+                            <input type="hidden" name="vote_type" value="1">
+                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors bg-transparent border-none text-on-surface">
+                                <span class="material-symbols-outlined text-[20px]">thumb_up</span>
+                                <span class="text-xs font-bold">{{.Likes}}</span>
+                            </button>
+                        </form>
+                        
+                        <div class="w-[1px] h-3 bg-outline-variant/30"></div>
+                        
+                        <form action="/vote" method="POST" class="m-0">
+                            <input type="hidden" name="target_id" value="{{.ID}}">
+                            <input type="hidden" name="target_type" value="post">
+                            <input type="hidden" name="vote_type" value="-1">
+                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-error transition-colors bg-transparent border-none text-on-surface">
+                                <span class="material-symbols-outlined text-[20px]">thumb_down</span>
+                                <span class="text-xs font-bold">{{.Dislikes}}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+            {{end}}
+        </div>
+    </main>
 </div>
 {{end}}
