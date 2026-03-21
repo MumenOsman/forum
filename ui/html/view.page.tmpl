@@ -3,15 +3,19 @@
 {{define "main"}}
 <div class="flex min-h-screen pt-20 w-full">
     <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex">
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
         {{if .IsAuthenticated}}
         <div class="flex items-center gap-3 px-3 py-6 mb-4">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
-                <span class="material-symbols-outlined text-tertiary">person</span>
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
             </div>
             <div>
-                <p class="font-headline text-on-surface font-bold leading-none">Scholar</p>
-                <p class="font-label text-xs text-on-surface-variant mt-1">Archivist</p>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
             </div>
         </div>
         
@@ -70,23 +74,23 @@
                     <div class="flex items-center justify-between pt-8 mt-8 border-t border-outline-variant/10">
                         <div class="flex items-center gap-6">
                             <div class="flex items-center bg-surface-container-low rounded-lg p-1">
-                                <form action="/vote" method="POST" class="m-0 border-none">
+                                <form action="/vote" method="POST" class="m-0 border-none" onsubmit="submitVote(event, this)">
                                     <input type="hidden" name="target_id" value="{{.Post.ID}}">
                                     <input type="hidden" name="target_type" value="post">
                                     <input type="hidden" name="vote_type" value="1">
                                     <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-high text-primary transition-colors rounded-md active:scale-95 bg-transparent border-none cursor-pointer">
                                         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
-                                        <span class="font-label font-bold">{{.Post.Likes}}</span>
+                                        <span class="font-label font-bold" id="likes-post-{{.Post.ID}}">{{.Post.Likes}}</span>
                                     </button>
                                 </form>
                                 <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                                <form action="/vote" method="POST" class="m-0 border-none">
+                                <form action="/vote" method="POST" class="m-0 border-none" onsubmit="submitVote(event, this)">
                                     <input type="hidden" name="target_id" value="{{.Post.ID}}">
                                     <input type="hidden" name="target_type" value="post">
                                     <input type="hidden" name="vote_type" value="-1">
                                     <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-high text-on-surface-variant hover:text-error transition-colors rounded-md active:scale-95 bg-transparent border-none cursor-pointer">
                                         <span class="material-symbols-outlined">thumb_down</span>
-                                        <span class="font-label font-bold">{{.Post.Dislikes}}</span>
+                                        <span class="font-label font-bold" id="dislikes-post-{{.Post.ID}}">{{.Post.Dislikes}}</span>
                                     </button>
                                 </form>
                             </div>
@@ -126,6 +130,9 @@
                     <div class="flex justify-between items-start mb-3 border-b border-outline-variant/10 pb-3">
                         <div>
                             <span class="font-headline font-bold text-on-surface mr-2">{{.Username}}</span>
+                            {{if eq .UserID $.Post.UserID}}
+                                <span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20 mr-2 uppercase tracking-tighter">Author</span>
+                            {{end}}
                             <span class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">{{.CreatedAt.Format "Jan 02, 2006"}}</span>
                         </div>
                     </div>
@@ -133,23 +140,23 @@
                     <p class="font-body text-on-surface-variant mb-4 leading-relaxed whitespace-pre-wrap">{{.Content}}</p>
                     
                     <div class="flex items-center gap-4">
-                        <form action="/vote" method="POST" class="m-0 border-none">
+                        <form action="/vote" method="POST" class="m-0 border-none" onsubmit="submitVote(event, this)">
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="comment">
                             <input type="hidden" name="vote_type" value="1">
-                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-primary bg-transparent border-none cursor-pointer">
+                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-primary bg-transparent border-none cursor-pointer transition-all active:scale-90">
                                 <span class="material-symbols-outlined text-sm">thumb_up</span>
-                                <span class="font-bold">{{.Likes}}</span>
+                                <span class="font-bold" id="likes-comment-{{.ID}}">{{.Likes}}</span>
                             </button>
                         </form>
                         
-                        <form action="/vote" method="POST" class="m-0 border-none">
+                        <form action="/vote" method="POST" class="m-0 border-none" onsubmit="submitVote(event, this)">
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="comment">
                             <input type="hidden" name="vote_type" value="-1">
-                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-error bg-transparent border-none cursor-pointer">
+                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-error bg-transparent border-none cursor-pointer transition-all active:scale-90">
                                 <span class="material-symbols-outlined text-sm">thumb_down</span>
-                                <span class="font-bold">{{.Dislikes}}</span>
+                                <span class="font-bold" id="dislikes-comment-{{.ID}}">{{.Dislikes}}</span>
                             </button>
                         </form>
                     </div>
@@ -171,7 +178,7 @@
                     </div>
                 {{end}}
 
-                <form action="/comment" method="POST" class="space-y-4 m-0 border-none">
+                <form action="/comment/create" method="POST" class="space-y-4 m-0 border-none" onsubmit="submitComment(event, this)">
                     <input type="hidden" name="post_id" value="{{.Post.ID}}">
                     <div class="relative">
                         <textarea class="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary focus:ring-0 rounded-lg p-6 min-h-[150px] font-body text-on-surface placeholder:text-on-surface-variant/40 transition-all resize-y" name="content" placeholder="Share your annotations..."></textarea>

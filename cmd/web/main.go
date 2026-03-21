@@ -57,6 +57,7 @@ func main() {
 	mux.HandleFunc("/user/signup", app.UserSignup)
 	mux.HandleFunc("/user/login", app.UserLogin)
 	mux.HandleFunc("/user/profile", app.UserProfile)
+	mux.HandleFunc("/user/profile/edit", app.ProfileEdit)
 	mux.HandleFunc("/user/logout", app.UserLogout)
 	mux.HandleFunc("/comment/create", app.CommentCreate)
 	mux.HandleFunc("/vote", app.VoteHandler)

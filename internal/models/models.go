@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -28,11 +29,13 @@ var ErrInvalidCredentials = errors.New("models: invalid credentials")
 
 // User structure for representing a user.
 type User struct {
-	ID        string
-	Email     string
-	Username  string
-	Password  string // Hashed password
-	CreatedAt string
+	ID             string
+	Email          string
+	Username       string
+	Password       string // Hashed password
+	AboutMe        string
+	ProfilePicture string
+	CreatedAt      time.Time
 }
 
 // Post structure for representing a forum post.
@@ -45,7 +48,7 @@ type Post struct {
 	Likes        int
 	Dislikes     int
 	CommentCount int // For easier display
-	CreatedAt    string
+	CreatedAt    time.Time
 	Categories   []*Category // Categories associated with this post
 	Comments     []*Comment  // Comments for detail view
 	UserLiked    bool        // State for current user
@@ -61,7 +64,7 @@ type Comment struct {
 	Content   string
 	Likes     int
 	Dislikes  int
-	CreatedAt string
+	CreatedAt time.Time
 }
 
 // Category represents a forum category.
@@ -211,13 +214,13 @@ func (m *AppModel) GetAllCategories() ([]*Category, error) {
 // GetPostByID retrieves a specific post and its associated comments.
 func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 	stmt := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.comment_count, p.created_at
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		WHERE p.id = ?`
 
 	var p Post
-	err := m.DB.QueryRow(stmt, postID).Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CreatedAt)
+	err := m.DB.QueryRow(stmt, postID).Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CommentCount, &p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -255,11 +258,72 @@ func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 	return &p, nil
 }
 
-// InsertComment adds a comment to a specific post.
-func (m *AppModel) InsertComment(commentID, postID, userID, content string) error {
+// InsertComment adds a comment to a specific post and returns the new comment's ID.
+func (m *AppModel) InsertComment(postID, userID, content string) (string, error) {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+
+	commentID := strconv.FormatInt(time.Now().UnixNano(), 36)
+
+	// 1. Insert comment
 	stmt := `INSERT INTO comments (id, post_id, user_id, content) VALUES (?, ?, ?, ?)`
-	_, err := m.DB.Exec(stmt, commentID, postID, userID, content)
-	return err
+	_, err = tx.Exec(stmt, commentID, postID, userID, content)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Increment post comment count
+	stmtUpdate := `UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?`
+	_, err = tx.Exec(stmtUpdate, postID)
+	if err != nil {
+		return "", err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return "", err
+	}
+
+	return commentID, nil
+}
+
+// GetCommentByID retrieves a single comment by its ID.
+func (m *AppModel) GetCommentByID(id string) (*Comment, error) {
+	stmt := `
+		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.likes, c.dislikes, c.created_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = ?`
+
+	var c Comment
+	err := m.DB.QueryRow(stmt, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+// GetVoteCounts returns the total likes and dislikes for a given target.
+func (m *AppModel) GetVoteCounts(targetID, targetType string) (struct{ Likes, Dislikes int }, error) {
+	var counts struct{ Likes, Dislikes int }
+	
+	// Since we cache likes/dislikes in the posts and comments tables, we can just read them from there.
+	var stmt string
+	if targetType == "post" {
+		stmt = `SELECT likes, dislikes FROM posts WHERE id = ?`
+	} else {
+		stmt = `SELECT likes, dislikes FROM comments WHERE id = ?`
+	}
+
+	err := m.DB.QueryRow(stmt, targetID).Scan(&counts.Likes, &counts.Dislikes)
+	return counts, err
 }
 
 // Authenticate checks if an email and password match a database record.
@@ -306,7 +370,7 @@ func (m *AppModel) DeleteSession(sessionID string) error {
 func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
 	var user User
 	stmt := `
-		SELECT u.id, u.email, u.username, u.password, u.created_at
+		SELECT u.id, u.email, u.username, u.password, u.about_me, u.profile_picture, u.created_at
 		FROM users u
 		INNER JOIN sessions s ON u.id = s.user_id
 		WHERE s.id = ? AND s.expires_at > CURRENT_TIMESTAMP`
@@ -316,6 +380,8 @@ func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
 		&user.Email,
 		&user.Username,
 		&user.Password,
+		&user.AboutMe,
+		&user.ProfilePicture,
 		&user.CreatedAt,
 	)
 	if err != nil {
@@ -329,9 +395,9 @@ func (m *AppModel) GetUserBySession(sessionID string) (*User, error) {
 
 // GetUserByID retrieves a specific user's details.
 func (m *AppModel) GetUserByID(userID string) (*User, error) {
-	stmt := `SELECT id, email, username, created_at FROM users WHERE id = ?`
+	stmt := `SELECT id, email, username, about_me, profile_picture, created_at FROM users WHERE id = ?`
 	var user User
-	err := m.DB.QueryRow(stmt, userID).Scan(&user.ID, &user.Email, &user.Username, &user.CreatedAt)
+	err := m.DB.QueryRow(stmt, userID).Scan(&user.ID, &user.Email, &user.Username, &user.AboutMe, &user.ProfilePicture, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -339,6 +405,13 @@ func (m *AppModel) GetUserByID(userID string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// UpdateUserProfile updates a user's about_me and profile_picture.
+func (m *AppModel) UpdateUserProfile(userID, aboutMe, profilePicture string) error {
+	stmt := `UPDATE users SET about_me = ?, profile_picture = ? WHERE id = ?`
+	_, err := m.DB.Exec(stmt, aboutMe, profilePicture, userID)
+	return err
 }
 
 // InsertOrUpdateVote registers a user's vote on a specific post or comment.

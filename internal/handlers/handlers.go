@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"literary-lions-forum/internal/auth"
 	"literary-lions-forum/internal/models"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -31,12 +34,16 @@ type TemplateData struct {
 	Posts           []*models.Post
 	Categories      []*models.Category
 	IsAuthenticated bool
+	AuthenticatedUser *models.User
 	User            *models.User
 	ErrorMessage    string
 	SearchQuery     string
 	Profile         *models.User
 	Comments        []*models.Comment
 	ErrorCode       int
+	FilterAuthored  bool
+	FilterLiked     bool
+	FilterCategory  string
 }
 
 // Application holds the application-wide dependencies for the handlers.
@@ -49,6 +56,7 @@ type Application struct {
 func (app *Application) serverError(w http.ResponseWriter, _ error) {
 	app.render(w, http.StatusInternalServerError, "error.page.tmpl", &TemplateData{
 		ErrorMessage: "Internal Server Error. We are looking into it.",
+		ErrorCode:    http.StatusInternalServerError,
 	})
 }
 
@@ -56,6 +64,7 @@ func (app *Application) serverError(w http.ResponseWriter, _ error) {
 func (app *Application) clientError(w http.ResponseWriter, status int, message string) {
 	app.render(w, status, "error.page.tmpl", &TemplateData{
 		ErrorMessage: message,
+		ErrorCode:    status,
 	})
 }
 
@@ -134,10 +143,28 @@ func (app *Application) getAuthenticatedUserID(r *http.Request) string {
 	return user.ID
 }
 
+func (app *Application) getAuthenticatedUser(r *http.Request) *models.User {
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		return nil
+	}
+	user, err := app.Models.GetUserByID(userID)
+	if err != nil {
+		return nil
+	}
+	return user
+}
+
 // Home handles requests to the root URL ("/").
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		app.notFound(w)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -177,14 +204,25 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.render(w, http.StatusOK, "home.page.tmpl", &TemplateData{
-		Posts:           posts,
-		Categories:      categories,
-		IsAuthenticated: userID != "",
+		Posts:             posts,
+		Categories:        categories,
+		IsAuthenticated:   userID != "",
+		AuthenticatedUser: app.getAuthenticatedUser(r),
+		SearchQuery:       searchQuery,
+		FilterAuthored:    authored == "true",
+		FilterLiked:       liked == "true",
+		FilterCategory:    categoryID,
 	})
 }
 
 // PostView handles requests to view a specific post (e.g., "/post/view?id=...").
 func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
 		app.notFound(w)
@@ -203,10 +241,13 @@ func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
 
 	userID := app.getAuthenticatedUserID(r)
 	categories, _ := app.Models.GetAllCategories()
+
 	app.render(w, http.StatusOK, "view.page.tmpl", &TemplateData{
-		Post:            post,
-		Categories:      categories,
-		IsAuthenticated: userID != "",
+		Post:              post,
+		Comments:          post.Comments,
+		Categories:        categories,
+		IsAuthenticated:   userID != "",
+		AuthenticatedUser: app.getAuthenticatedUser(r),
 	})
 }
 
@@ -226,8 +267,9 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 		}
 
 		app.render(w, http.StatusOK, "create.page.tmpl", &TemplateData{
-			Categories:      categories,
-			IsAuthenticated: true,
+			Categories:        categories,
+			IsAuthenticated:   true,
+			AuthenticatedUser: app.getAuthenticatedUser(r),
 		})
 		return
 	}
@@ -302,16 +344,23 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commentID, err := auth.GenerateSessionID() // secure UUID for comment ID
+	commentID, err := app.Models.InsertComment(postID, userID, content)
 	if err != nil {
 		app.serverError(w, nil)
 		return
 	}
 
-	err = app.Models.InsertComment(commentID, postID, userID, content)
-	if err != nil {
-		app.serverError(w, nil)
-		return
+	// AJAX Support
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		comment, err := app.Models.GetCommentByID(commentID)
+		if err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": true,
+				"comment": comment,
+			})
+			return
+		}
 	}
 
 	http.Redirect(w, r, "/post/view?id="+postID, http.StatusSeeOther)
@@ -485,6 +534,20 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// AJAX Support
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		counts, err := app.Models.GetVoteCounts(targetID, targetType)
+		if err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":  true,
+				"likes":    counts.Likes,
+				"dislikes": counts.Dislikes,
+			})
+			return
+		}
+	}
+
 	// Redirect back to the page the user came from (or fallback to Home)
 	referer := r.Header.Get("Referer")
 	if referer == "" {
@@ -495,6 +558,12 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 // UserProfile handles requests to view a user's profile ("/user/profile?id=...").
 func (app *Application) UserProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
 		app.notFound(w)
@@ -517,12 +586,81 @@ func (app *Application) UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUserID := app.getAuthenticatedUserID(r)
-	categories, _ := app.Models.GetAllCategories()
 	app.render(w, http.StatusOK, "profile.page.tmpl", &TemplateData{
-		User:            user,
-		Posts:           posts,
-		Categories:      categories,
-		IsAuthenticated: currentUserID != "",
+		User:              user,
+		Posts:             posts,
+		IsAuthenticated:   app.getAuthenticatedUserID(r) != "",
+		AuthenticatedUser: app.getAuthenticatedUser(r),
 	})
+}
+
+// ProfileEdit handles GET and POST requests to edit a user's profile.
+func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	user, err := app.Models.GetUserByID(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+			User:              user,
+			IsAuthenticated:   true,
+			AuthenticatedUser: user,
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		// Limit the size of the uploaded file to 2MB
+		err := r.ParseMultipartForm(2 << 20)
+		if err != nil {
+			app.clientError(w, http.StatusBadRequest, "File too large")
+			return
+		}
+
+		aboutMe := r.PostFormValue("about_me")
+		profilePicture := user.ProfilePicture
+
+		file, header, err := r.FormFile("profile_picture")
+		if err == nil {
+			defer file.Close()
+
+			// Create a unique filename
+			fileName := fmt.Sprintf("%s_%s", userID, header.Filename)
+			filePath := filepath.Join("ui/static/uploads", fileName)
+
+			dst, err := os.Create(filePath)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			defer dst.Close()
+
+			if _, err := io.Copy(dst, file); err != nil {
+				app.serverError(w, err)
+				return
+			}
+
+			profilePicture = "/static/uploads/" + fileName
+		}
+
+		err = app.Models.UpdateUserProfile(userID, aboutMe, profilePicture)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		http.Redirect(w, r, "/user/profile?id="+userID, http.StatusSeeOther)
+		return
+	}
+
+	w.Header().Set("Allow", "GET, POST")
+	app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 }
