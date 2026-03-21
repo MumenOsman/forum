@@ -1,21 +1,77 @@
 {{template "base" .}}
 
 {{define "main"}}
-<form action='/user/signup' method='POST' novalidate>
-    <div>
-        <label>Username:</label>
-        <input type='text' name='username' required>
+<main class="flex-grow flex items-center justify-center relative px-6 py-24 overflow-hidden mt-12">
+    <!-- Background Decorative Elements -->
+    <div class="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-tertiary/5 rounded-full blur-[120px] pointer-events-none"></div>
+    
+    <div class="w-full max-w-md z-10">
+        {{if .ErrorMessage}}
+        <!-- Error Banner -->
+        <div class="mb-6 rounded-xl border border-error/20 bg-error-container/10 glass-morphism p-4 flex items-start gap-3 shadow-xl">
+            <span class="material-symbols-outlined text-error mt-0.5">error</span>
+            <div class="flex-grow">
+                <p class="text-sm font-label font-medium text-on-error-container">{{.ErrorMessage}}</p>
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Signup Card -->
+        <div class="bg-surface-container/70 glass-morphism rounded-xl p-8 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.3)] border border-outline-variant/15">
+            <div class="mb-10 text-center">
+                <h1 class="font-headline text-3xl md:text-4xl text-on-surface mb-3 tracking-tight">Join the Archives</h1>
+                <p class="font-body text-on-surface-variant/80 text-sm">Register your scholar's signature.</p>
+            </div>
+            
+            <form action="/user/signup" method="POST" class="space-y-8">
+                <!-- Username Field -->
+                <div class="group">
+                    <label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary mb-2" for="username">Username</label>
+                    <div class="relative">
+                        <input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="username" name="username" placeholder="scholar_1984" type="text" required />
+                        <div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div class="group">
+                    <label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary mb-2" for="email">Email Address</label>
+                    <div class="relative">
+                        <input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="email" name="email" placeholder="archive@library.com" type="email" required />
+                        <div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="group">
+                    <label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary mb-2" for="password">Password</label>
+                    <div class="relative">
+                        <input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="password" name="password" placeholder="••••••••" type="password" required />
+                        <div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="w-full group relative flex items-center justify-center py-4 px-6 bg-gradient-to-br from-primary to-primary-container text-on-primary font-label font-bold text-sm tracking-widest rounded-md overflow-hidden transition-all active:scale-[0.98] shadow-lg shadow-primary/10" type="submit">
+                    <span class="relative z-10">BECOME A MEMBER</span>
+                    <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </button>
+            </form>
+
+            <!-- Footer Link -->
+            <div class="mt-10 text-center">
+                <p class="font-body text-sm text-on-surface-variant">
+                    Already hold an account? 
+                    <a class="text-primary font-bold hover:underline underline-offset-4 ml-1 transition-all" href="/user/login">Log In</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center opacity-40">
+            <p class="font-headline italic text-lg text-on-background">"A room without books is like a body without a soul."</p>
+            <p class="font-label text-[10px] uppercase tracking-[0.2em] mt-2">— Cicero</p>
+        </div>
     </div>
-    <div>
-        <label>Email:</label>
-        <input type='email' name='email' required>
-    </div>
-    <div>
-        <label>Password:</label>
-        <input type='password' name='password' required>
-    </div>
-    <div>
-        <input type='submit' value='Signup'>
-    </div>
-</form>
+</main>
 {{end}}

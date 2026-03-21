@@ -1,60 +1,200 @@
 {{template "base" .}}
 
 {{define "main"}}
-<h2>{{.Post.Title}}</h2>
-<p><em>Posted by <a href="/user/profile?id={{.Post.UserID}}">{{.Post.Username}}</a> on {{.Post.CreatedAt}}</em></p>
-<div style="margin: 20px 0; padding: 10px; border: 1px solid #ccc;">
-    <p>{{.Post.Content}}</p>
-    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-        <span>Likes: {{.Post.Likes}} | Dislikes: {{.Post.Dislikes}}</span>
-        {{if $.IsAuthenticated}}
-        <form action="/vote" method="POST" style="display:inline;">
-            <input type="hidden" name="target_id" value="{{.Post.ID}}">
-            <input type="hidden" name="target_type" value="post">
-            <button type="submit" name="vote_type" value="1">👍</button>
-            <button type="submit" name="vote_type" value="-1">👎</button>
-        </form>
-        {{end}}
-    </div>
-</div>
-<hr>
-<h3>Comments</h3>
-{{if .Post.Comments}}
-    <ul>
-    {{range .Post.Comments}}
-        <li style="margin-bottom: 15px;">
-            <p style="margin: 0;">{{.Content}}</p>
-            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                <small>- <a href="/user/profile?id={{.UserID}}">{{.Username}}</a> at {{.CreatedAt}}</small>
-                <small> | Likes: {{.Likes}} | Dislikes: {{.Dislikes}}</small>
-                {{if $.IsAuthenticated}}
-                <form action="/vote" method="POST" style="display:inline;">
-                    <input type="hidden" name="target_id" value="{{.ID}}">
-                    <input type="hidden" name="target_type" value="comment">
-                    <button type="submit" name="vote_type" value="1" style="font-size: 0.8em;">👍</button>
-                    <button type="submit" name="vote_type" value="-1" style="font-size: 0.8em;">👎</button>
-                </form>
-                {{end}}
+<div class="flex min-h-screen pt-20 w-full">
+    <!-- SideNavBar Component -->
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex">
+        {{if .IsAuthenticated}}
+        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                <span class="material-symbols-outlined text-tertiary">person</span>
             </div>
-        </li>
-    {{end}}
-    </ul>
-{{else}}
-    <p>No comments yet.</p>
-{{end}}
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none">Scholar</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1">Archivist</p>
+            </div>
+        </div>
+        
+        <div class="pt-6 pb-2 border-t border-outline-variant/10 mt-auto">
+            <a href="/post/create" class="w-full flex items-center justify-center gap-2 py-3 bg-[#222a3d] text-[#fabd00] rounded-md font-bold hover:brightness-125 shadow-lg border border-tertiary/20 no-underline transition-all active:scale-95">
+                <span class="material-symbols-outlined">add_circle</span>
+                <span class="font-label">Create Post</span>
+            </a>
+        </div>
+        {{end}}
+    </aside>
 
-{{if $.IsAuthenticated}}
-    <h4 style="margin-top: 20px;">Add a Comment</h4>
-    <form action='/comment/create' method='POST'>
-        <input type='hidden' name='post_id' value='{{.Post.ID}}'>
-        <div>
-            <textarea name='content' required rows="3"></textarea>
-        </div>
-        <div>
-            <input type='submit' value='Submit Comment'>
-        </div>
-    </form>
-{{else}}
-    <p style="margin-top: 20px;"><a href="/user/login">Log in</a> to leave a comment.</p>
-{{end}}
+    <!-- Main Content Area -->
+    <main class="flex-1 lg:ml-64 pt-28 pb-20 px-4 md:px-8 max-w-5xl mx-auto w-full">
+        <!-- Single Post Article -->
+        <article class="relative bg-surface-container border border-outline-variant/15 rounded-xl overflow-hidden shadow-2xl mb-12">
+            <!-- Header Banner Overlay -->
+            <div class="h-64 relative overflow-hidden bg-primary/20">
+                <div class="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent z-10"></div>
+                <!-- Abstract filler backdrop since we didn't specify image URLs -->
+                <div class="w-full h-full bg-surface-variant opacity-30 mix-blend-overlay"></div>
+            </div>
+            
+            <div class="px-8 md:px-16 -mt-32 relative z-20 pb-12">
+                <div class="flex flex-col gap-6">
+                    <!-- Post Meta -->
+                    <div class="flex items-center gap-4">
+                        <span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold tracking-widest font-label uppercase">Archive Thread</span>
+                        <span class="text-xs text-on-surface-variant font-label">{{.Post.CreatedAt.Format "Jan 02, 2006"}}</span>
+                    </div>
+
+                    <!-- Title -->
+                    <h1 class="text-4xl md:text-6xl font-headline font-bold text-on-surface leading-tight tracking-tight">
+                        {{.Post.Title}}
+                    </h1>
+
+                    <!-- Author -->
+                    <div class="flex items-center gap-3 py-4 border-y border-outline-variant/10">
+                        <div class="w-12 h-12 rounded-full border-2 border-primary overflow-hidden bg-surface-container-high flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-2xl">person</span>
+                        </div>
+                        <div>
+                            <a href="/user/profile?id={{.Post.UserID}}" class="no-underline text-on-surface hover:text-primary transition-colors">
+                                <p class="font-headline text-lg font-bold leading-none">{{.Post.Username}}</p>
+                            </a>
+                            <p class="text-xs text-primary font-label uppercase tracking-tighter mt-1">Archivist</p>
+                        </div>
+                    </div>
+
+                    <!-- Content Body -->
+                    <div class="prose prose-invert max-w-none font-body text-on-surface-variant leading-relaxed space-y-6 text-lg tracking-wide whitespace-pre-wrap">
+                        {{.Post.Content}}
+                    </div>
+
+                    <!-- Post Interaction (Like/Dislikes mapping) -->
+                    <div class="flex items-center justify-between pt-8 mt-8 border-t border-outline-variant/10">
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center bg-surface-container-low rounded-lg p-1">
+                                <form action="/vote" method="POST" class="m-0 border-none">
+                                    <input type="hidden" name="target_id" value="{{.Post.ID}}">
+                                    <input type="hidden" name="target_type" value="post">
+                                    <input type="hidden" name="vote_type" value="1">
+                                    <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-high text-primary transition-colors rounded-md active:scale-95 bg-transparent border-none cursor-pointer">
+                                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+                                        <span class="font-label font-bold">{{.Post.Likes}}</span>
+                                    </button>
+                                </form>
+                                <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+                                <form action="/vote" method="POST" class="m-0 border-none">
+                                    <input type="hidden" name="target_id" value="{{.Post.ID}}">
+                                    <input type="hidden" name="target_type" value="post">
+                                    <input type="hidden" name="vote_type" value="-1">
+                                    <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-high text-on-surface-variant hover:text-error transition-colors rounded-md active:scale-95 bg-transparent border-none cursor-pointer">
+                                        <span class="material-symbols-outlined">thumb_down</span>
+                                        <span class="font-label font-bold">{{.Post.Dislikes}}</span>
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 text-on-surface-variant">
+                                <span class="material-symbols-outlined">mode_comment</span>
+                                <span class="font-label text-sm font-bold">{{len .Comments}} Annotations</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Comments Section -->
+        <section class="space-y-8">
+            <div class="flex items-center justify-between mb-8 border-b border-outline-variant/10 pb-4">
+                <h3 class="font-headline text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-surface-tint">The Discussion</h3>
+            </div>
+
+            {{if not .Comments}}
+                <div class="text-center py-10 bg-surface-container/30 rounded-xl border border-outline-variant/10">
+                    <span class="material-symbols-outlined text-3xl text-outline-variant/50 mb-3">chat_off</span>
+                    <p class="font-headline text-lg text-on-surface-variant">No one has annotated this chapter yet.</p>
+                </div>
+            {{end}}
+
+            {{range .Comments}}
+            <div class="flex gap-4 group">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex flex-col items-center justify-center overflow-hidden">
+                        <span class="material-symbols-outlined text-sm text-tertiary">person</span>
+                    </div>
+                </div>
+                
+                <div class="flex-grow bg-surface-container-low/50 p-6 rounded-xl border border-outline-variant/10 hover:border-outline-variant/30 transition-colors shadow-sm">
+                    <div class="flex justify-between items-start mb-3 border-b border-outline-variant/10 pb-3">
+                        <div>
+                            <span class="font-headline font-bold text-on-surface mr-2">{{.Username}}</span>
+                            <span class="text-[10px] font-label text-on-surface-variant uppercase tracking-widest">{{.CreatedAt.Format "Jan 02, 2006"}}</span>
+                        </div>
+                    </div>
+                    
+                    <p class="font-body text-on-surface-variant mb-4 leading-relaxed whitespace-pre-wrap">{{.Content}}</p>
+                    
+                    <div class="flex items-center gap-4">
+                        <form action="/vote" method="POST" class="m-0 border-none">
+                            <input type="hidden" name="target_id" value="{{.ID}}">
+                            <input type="hidden" name="target_type" value="comment">
+                            <input type="hidden" name="vote_type" value="1">
+                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-primary bg-transparent border-none cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">thumb_up</span>
+                                <span class="font-bold">{{.Likes}}</span>
+                            </button>
+                        </form>
+                        
+                        <form action="/vote" method="POST" class="m-0 border-none">
+                            <input type="hidden" name="target_id" value="{{.ID}}">
+                            <input type="hidden" name="target_type" value="comment">
+                            <input type="hidden" name="vote_type" value="-1">
+                            <button class="flex items-center gap-1.5 text-xs font-label text-on-surface-variant hover:text-error bg-transparent border-none cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">thumb_down</span>
+                                <span class="font-bold">{{.Dislikes}}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+
+            {{if .IsAuthenticated}}
+            <!-- New Comment Form -->
+            <div class="mt-16 bg-surface-container border border-outline-variant/20 rounded-xl p-8 shadow-xl relative top-8">
+                <div class="flex items-center gap-3 mb-6 border-b border-outline-variant/10 pb-4">
+                    <span class="material-symbols-outlined text-tertiary">history_edu</span>
+                    <span class="font-headline font-bold text-on-surface text-2xl">Drop an ink blot...</span>
+                </div>
+                
+                {{if .ErrorMessage}}
+                    <div class="px-6 py-4 mb-4 rounded bg-error/20 border-l-4 border-error text-error font-bold text-sm">
+                        {{.ErrorMessage}}
+                    </div>
+                {{end}}
+
+                <form action="/comment" method="POST" class="space-y-4 m-0 border-none">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <div class="relative">
+                        <textarea class="w-full bg-surface-container-low border border-outline-variant/30 focus:border-primary focus:ring-0 rounded-lg p-6 min-h-[150px] font-body text-on-surface placeholder:text-on-surface-variant/40 transition-all resize-y" name="content" placeholder="Share your annotations..."></textarea>
+                    </div>
+                    <div class="flex justify-end items-center">
+                        <button class="px-8 py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold font-label rounded-md shadow-lg hover:brightness-110 active:scale-95 transition-all outline-none border-none cursor-pointer" type="submit">
+                            ANNOTATE
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {{else}}
+            <div class="mt-16 bg-surface-container border border-outline-variant/20 rounded-xl p-8 shadow-xl text-center">
+                <span class="material-symbols-outlined text-4xl text-outline-variant/50 mb-4">lock_clock</span>
+                <p class="font-headline text-lg text-on-surface">You must be formally recognized by the archives to contribute.</p>
+                <div class="mt-6 flex justify-center gap-4">
+                    <a href="/user/login" class="px-6 py-2 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-md font-bold shadow-lg no-underline hover:brightness-110">Login</a>
+                    <a href="/user/signup" class="px-6 py-2 border border-outline-variant text-[#dae2fd] rounded-md font-bold shadow-lg shadow-black/20 no-underline hover:bg-surface-container-high">Register</a>
+                </div>
+            </div>
+            {{end}}
+
+        </section>
+    </main>
+</div>
 {{end}}
