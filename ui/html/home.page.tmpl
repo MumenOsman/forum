@@ -4,6 +4,14 @@
 <div class="forum-container">
     <!-- Sidebar for Filters -->
     <aside class="sidebar">
+        <div style="margin-bottom: 20px;">
+            <h3>Search</h3>
+            <form action="/" method="GET" style="display: flex; gap: 5px; flex-direction: column;">
+                <input type="text" name="q" placeholder="Keywords..." required style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px;">Find Topics</button>
+            </form>
+        </div>
+
         <div>
             <h3>Explore</h3>
             <ul>
@@ -34,7 +42,7 @@
                 <article class="post-card">
                     <a href="/post/view?id={{.ID}}">{{.Title}}</a>
                     <div class="post-meta">
-                        by <strong>{{.Username}}</strong> • {{.CreatedAt.Format "Jan 02, 2006"}}
+                        by <a href="/user/profile?id={{.UserID}}" style="color: var(--accent-light); text-decoration: none;"><strong>{{.Username}}</strong></a> • {{.CreatedAt.Format "Jan 02, 2006"}}
                     </div>
                     <div class="post-content-preview" style="font-size: 0.9375rem; color: var(--text-main); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                         {{.Content}}

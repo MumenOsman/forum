@@ -32,12 +32,32 @@ type TemplateData struct {
 	Categories      []*models.Category
 	IsAuthenticated bool
 	User            *models.User
+	ErrorMessage    string
 }
 
 // Application holds the application-wide dependencies for the handlers.
 type Application struct {
 	Models        *models.AppModel
 	TemplateCache map[string]*template.Template
+}
+
+// serverError sends a generic 500 error to the user gracefully.
+func (app *Application) serverError(w http.ResponseWriter, _ error) {
+	app.render(w, http.StatusInternalServerError, "error.page.tmpl", &TemplateData{
+		ErrorMessage: "Internal Server Error. We are looking into it.",
+	})
+}
+
+// clientError sends an error message and status code to the user gracefully.
+func (app *Application) clientError(w http.ResponseWriter, status int, message string) {
+	app.render(w, status, "error.page.tmpl", &TemplateData{
+		ErrorMessage: message,
+	})
+}
+
+// notFound sends a 404 error gracefully
+func (app *Application) notFound(w http.ResponseWriter) {
+	app.clientError(w, http.StatusNotFound, "The requested resource could not be found.")
 }
 
 // Render is a helper to render HTML templates.
@@ -113,12 +133,13 @@ func (app *Application) getAuthenticatedUserID(r *http.Request) string {
 // Home handles requests to the root URL ("/").
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
 	userID := app.getAuthenticatedUserID(r)
 
+	searchQuery := r.URL.Query().Get("q")
 	categoryID := r.URL.Query().Get("category")
 	authored := r.URL.Query().Get("authored")
 	liked := r.URL.Query().Get("liked")
@@ -139,15 +160,15 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		likedBy = userID
 	}
 
-	posts, err := app.Models.GetFilteredPosts(categoryID, authoredBy, likedBy)
+	posts, err := app.Models.GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	categories, err := app.Models.GetAllCategories()
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
@@ -162,16 +183,16 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
 	post, err := app.Models.GetPostByID(idStr)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			http.NotFound(w, r)
+			app.notFound(w)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			app.serverError(w, nil)
 		}
 		return
 	}
@@ -194,7 +215,7 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		categories, err := app.Models.GetAllCategories()
 		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			app.serverError(w, nil)
 			return
 		}
 
@@ -207,13 +228,13 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -228,19 +249,19 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if title == "" || content == "" || len(categories) == 0 {
-		http.Error(w, "Bad request: title, content, and at least 1 category required", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad request: title, content, and at least 1 category required")
 		return
 	}
 
 	postID, err := auth.GenerateSessionID() // secure UUID for post ID
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	err = app.Models.InsertPost(postID, userID, title, content, categories)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
@@ -251,7 +272,7 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -263,7 +284,7 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -271,19 +292,19 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 	content := r.PostForm.Get("content")
 
 	if postID == "" || content == "" {
-		http.Error(w, "Bad request: post_id and content required", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad request: post_id and content required")
 		return
 	}
 
 	commentID, err := auth.GenerateSessionID() // secure UUID for comment ID
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	err = app.Models.InsertComment(commentID, postID, userID, content)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
@@ -299,13 +320,13 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -315,20 +336,20 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	userID, err := auth.GenerateSessionID() // Reusing to generate a UUID for the user ID
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	err = app.Models.InsertUser(userID, email, username, hashedPassword)
 	if err != nil {
 		// Possibly email/username already taken
-		http.Error(w, "Error saving user properties or user already exists", http.StatusInternalServerError)
+		app.clientError(w, http.StatusInternalServerError, "Error saving user properties or user already exists")
 		return
 	}
 
@@ -344,13 +365,13 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -360,23 +381,25 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 	userID, err := app.Models.Authenticate(email, password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			app.render(w, http.StatusUnauthorized, "login.page.tmpl", &TemplateData{
+				ErrorMessage: "Invalid email or password",
+			})
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			app.serverError(w, nil)
 		}
 		return
 	}
 
 	sessionID, err := auth.GenerateSessionID()
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 	err = app.Models.InsertSession(sessionID, userID, expiresAt)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
@@ -395,7 +418,7 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -419,7 +442,7 @@ func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
 func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -431,7 +454,7 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -440,19 +463,19 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 	voteTypeStr := r.PostForm.Get("vote_type")
 
 	if targetID == "" || (targetType != "post" && targetType != "comment") || (voteTypeStr != "1" && voteTypeStr != "-1") {
-		http.Error(w, "Bad Request: invalid vote parameters", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request: invalid vote parameters")
 		return
 	}
 
 	voteType, err := strconv.Atoi(voteTypeStr)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
 	err = app.Models.InsertOrUpdateVote(userID, targetID, targetType, voteType)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, nil)
 		return
 	}
 
@@ -462,4 +485,36 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 		referer = "/"
 	}
 	http.Redirect(w, r, referer, http.StatusSeeOther)
+}
+
+// UserProfile handles requests to view a user's profile ("/user/profile?id=...").
+func (app *Application) UserProfile(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		app.notFound(w)
+		return
+	}
+
+	user, err := app.Models.GetUserByID(idStr)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	posts, err := app.Models.GetFilteredPosts("", idStr, "", "")
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	currentUserID := app.getAuthenticatedUserID(r)
+	app.render(w, http.StatusOK, "profile.page.tmpl", &TemplateData{
+		User:            user,
+		Posts:           posts,
+		IsAuthenticated: currentUserID != "",
+	})
 }

@@ -18,3 +18,7 @@ bin/
 # OS specific
 .DS_Store
 Thumbs.db
+Testing.md
+failedTests.md
+extraFeatures.md
+designPrompt.md
