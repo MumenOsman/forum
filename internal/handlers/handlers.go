@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"literary-lions-forum/internal/auth"
 	"literary-lions-forum/internal/models"
 	"net/http"
@@ -53,7 +55,8 @@ type Application struct {
 }
 
 // serverError sends a generic 500 error to the user gracefully.
-func (app *Application) serverError(w http.ResponseWriter, _ error) {
+func (app *Application) serverError(w http.ResponseWriter, err error) {
+	log.Printf("Server Error: %v", err)
 	app.render(w, http.StatusInternalServerError, "error.page.tmpl", &TemplateData{
 		ErrorMessage: "Internal Server Error. We are looking into it.",
 		ErrorCode:    http.StatusInternalServerError,
@@ -86,11 +89,21 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, d
 	}
 	data.CurrentYear = time.Now().Year()
 
-	w.WriteHeader(status)
-	err := ts.ExecuteTemplate(w, "base", data)
+	buf := new(bytes.Buffer)
+
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Prevent infinite loop if error.page.tmpl itself fails
+		if page == "error.page.tmpl" {
+			http.Error(w, "Critical Error: Cannot render error page.", http.StatusInternalServerError)
+			return
+		}
+		app.serverError(w, err)
+		return
 	}
+
+	w.WriteHeader(status)
+	buf.WriteTo(w)
 }
 
 // NewTemplateCache creates a cache of parsed templates.
@@ -193,13 +206,13 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := app.Models.GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
 	categories, err := app.Models.GetAllCategories()
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
@@ -234,14 +247,13 @@ func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, nil)
+			app.serverError(w, err)
 		}
 		return
 	}
 
 	userID := app.getAuthenticatedUserID(r)
 	categories, _ := app.Models.GetAllCategories()
-
 	app.render(w, http.StatusOK, "view.page.tmpl", &TemplateData{
 		Post:              post,
 		Comments:          post.Comments,
@@ -262,7 +274,7 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		categories, err := app.Models.GetAllCategories()
 		if err != nil {
-			app.serverError(w, nil)
+			app.serverError(w, err)
 			return
 		}
 
@@ -303,13 +315,13 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 
 	postID, err := auth.GenerateSessionID() // secure UUID for post ID
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
 	err = app.Models.InsertPost(postID, userID, title, content, categories)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
@@ -346,7 +358,7 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 
 	commentID, err := app.Models.InsertComment(postID, userID, content)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
@@ -391,13 +403,13 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
 	userID, err := auth.GenerateSessionID() // Reusing to generate a UUID for the user ID
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
@@ -440,21 +452,21 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 				ErrorMessage: "Invalid email or password",
 			})
 		} else {
-			app.serverError(w, nil)
+			app.serverError(w, err)
 		}
 		return
 	}
 
 	sessionID, err := auth.GenerateSessionID()
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 	err = app.Models.InsertSession(sessionID, userID, expiresAt)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 
@@ -530,7 +542,7 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = app.Models.InsertOrUpdateVote(userID, targetID, targetType, voteType)
 	if err != nil {
-		app.serverError(w, nil)
+		app.serverError(w, err)
 		return
 	}
 

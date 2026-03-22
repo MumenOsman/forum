@@ -151,7 +151,7 @@
                     </div>
                     
                     <div class="flex items-center gap-4 bg-surface-container-low/50 px-4 py-2 rounded-full border border-outline-variant/5">
-                        <form action="/vote" method="POST" class="m-0" onsubmit="submitVote(event, this)">
+                        <form action="/vote" method="POST" class="m-0">
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="post">
                             <input type="hidden" name="vote_type" value="1">
@@ -163,7 +163,7 @@
                         
                         <div class="w-[1px] h-3 bg-outline-variant/30"></div>
                         
-                        <form action="/vote" method="POST" class="m-0" onsubmit="submitVote(event, this)">
+                        <form action="/vote" method="POST" class="m-0">
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="post">
                             <input type="hidden" name="vote_type" value="-1">

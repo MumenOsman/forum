@@ -214,7 +214,9 @@ func (m *AppModel) GetAllCategories() ([]*Category, error) {
 // GetPostByID retrieves a specific post and its associated comments.
 func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 	stmt := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.comment_count, p.created_at
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes,
+		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+		       p.created_at
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		WHERE p.id = ?`
@@ -260,29 +262,10 @@ func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 
 // InsertComment adds a comment to a specific post and returns the new comment's ID.
 func (m *AppModel) InsertComment(postID, userID, content string) (string, error) {
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback()
-
 	commentID := strconv.FormatInt(time.Now().UnixNano(), 36)
 
-	// 1. Insert comment
 	stmt := `INSERT INTO comments (id, post_id, user_id, content) VALUES (?, ?, ?, ?)`
-	_, err = tx.Exec(stmt, commentID, postID, userID, content)
-	if err != nil {
-		return "", err
-	}
-
-	// 2. Increment post comment count
-	stmtUpdate := `UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?`
-	_, err = tx.Exec(stmtUpdate, postID)
-	if err != nil {
-		return "", err
-	}
-
-	err = tx.Commit()
+	_, err := m.DB.Exec(stmt, commentID, postID, userID, content)
 	if err != nil {
 		return "", err
 	}
