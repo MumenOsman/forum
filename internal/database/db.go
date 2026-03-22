@@ -24,7 +24,7 @@ Responsibilities:
 // InitDB attempts to connect to a given dsn (data source name).
 // Example: InitDB("forum.db")
 func InitDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite3", dsn+"?_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %w", err)
 	}
@@ -45,6 +45,8 @@ func InitSchema(db *sql.DB) error {
 		email TEXT UNIQUE NOT NULL,
 		username TEXT UNIQUE NOT NULL,
 		password TEXT NOT NULL,
+		about_me TEXT DEFAULT '',
+		profile_picture TEXT DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -109,7 +111,21 @@ func InitSchema(db *sql.DB) error {
 	// Populate default categories if empty
 	initCategories(db)
 
+	// Apply migrations for existing users who might lack the new columns
+	ApplyMigrations(db)
+
 	return nil
+}
+
+// ApplyMigrations adds columns to existing tables if they don't exist.
+func ApplyMigrations(db *sql.DB) {
+	// Add about_me if it doesn't exist
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN about_me TEXT DEFAULT ''")
+	// Add profile_picture if it doesn't exist
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN profile_picture TEXT DEFAULT ''")
+	// Add likes/dislikes to comments if they don't exist
+	_, _ = db.Exec("ALTER TABLE comments ADD COLUMN likes INTEGER DEFAULT 0")
+	_, _ = db.Exec("ALTER TABLE comments ADD COLUMN dislikes INTEGER DEFAULT 0")
 }
 
 // initCategories is a helper to ensure at least some categories exist.

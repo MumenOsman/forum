@@ -1,0 +1,63 @@
+{{template "base" .}}
+
+{{define "main"}}
+<div class="flex min-h-screen pt-20 w-full">
+    <!-- SideNavBar Component -->
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
+        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
+            </div>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="flex-1 lg:ml-64 pt-12 pb-12 px-4 md:px-12 max-w-4xl mx-auto w-full">
+        <header class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-headline font-bold text-on-surface mb-4">Refine Your Archive</h1>
+            <p class="text-on-surface-variant font-body">Share your background and choose a visual representation for your scholarly identity.</p>
+        </header>
+
+        <form action="/user/profile/edit" method="POST" enctype="multipart/form-data" class="space-y-8 bg-surface-container/40 p-8 md:p-12 rounded-xl border border-outline-variant/15 backdrop-blur-md">
+            <!-- About Me Section -->
+            <div class="space-y-4">
+                <label for="about_me" class="block text-sm font-bold text-primary uppercase tracking-widest">About the Archivist</label>
+                <textarea id="about_me" name="about_me" rows="5" class="w-full bg-[#171f33] border border-outline-variant/20 rounded-md py-4 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Describe your areas of interest, your literary background, or anything you'd like to share with the forum...">{{.User.AboutMe}}</textarea>
+                <p class="text-xs text-on-surface-variant/60 italic">This will be displayed on your public profile page.</p>
+            </div>
+
+            <!-- Profile Picture Section -->
+            <div class="space-y-4">
+                <label for="profile_picture" class="block text-sm font-bold text-primary uppercase tracking-widest">Profile Icon</label>
+                <div class="flex items-center gap-6">
+                    <div class="w-24 h-24 rounded-full border-2 border-outline-variant/20 bg-surface-container-high flex items-center justify-center overflow-hidden">
+                        {{if .User.ProfilePicture}}
+                            <img src="{{.User.ProfilePicture}}" alt="Current Profile Picture" class="w-full h-full object-cover">
+                        {{else}}
+                            <span class="material-symbols-outlined text-4xl text-on-surface-variant">account_circle</span>
+                        {{end}}
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="block w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer">
+                        <p class="mt-2 text-xs text-on-surface-variant/60 italic">Maximum file size 2MB. Recommended square dimensions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-8 border-t border-outline-variant/10 flex items-center gap-4">
+                <button type="submit" class="px-8 py-3 bg-primary text-on-primary rounded-md font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg">Save Changes</button>
+                <a href="/user/profile?id={{.User.ID}}" class="px-8 py-3 text-on-surface-variant font-bold hover:text-on-surface transition-colors no-underline">Cancel</a>
+            </div>
+        </form>
+    </main>
+</div>
+{{end}}

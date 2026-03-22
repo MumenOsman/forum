@@ -3,15 +3,19 @@
 {{define "main"}}
 <div class="flex min-h-screen pt-20">
     <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex">
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
         {{if .IsAuthenticated}}
         <div class="flex items-center gap-3 px-3 py-6 mb-4">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
-                <span class="material-symbols-outlined text-tertiary">person</span>
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
             </div>
             <div>
-                <p class="font-headline text-on-surface font-bold leading-none">Scholar</p>
-                <p class="font-label text-xs text-on-surface-variant mt-1">Archivist</p>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
             </div>
         </div>
         {{end}}
@@ -26,15 +30,33 @@
         <nav class="flex-1 space-y-1">
             <form action="/" method="GET" class="m-0">
                 {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 {{if and (not .FilterCategory) (not .FilterAuthored) (not .FilterLiked)}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span class="font-label">All Categories</span>
                 </button>
             </form>
+
+            {{if .IsAuthenticated}}
+            <form action="/" method="GET" class="m-0">
+                <input type="hidden" name="authored" value="true">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterAuthored}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">person_pin</span>
+                    <span class="font-label">My Posts</span>
+                </button>
+            </form>
+            <form action="/" method="GET" class="m-0">
+                <input type="hidden" name="liked" value="true">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterLiked}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">favorite</span>
+                    <span class="font-label">Liked Posts</span>
+                </button>
+            </form>
+            {{end}}
+
             {{range .Categories}}
             <form action="/" method="GET" class="m-0">
                 {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 {{if eq $.FilterCategory (printf "%d" .ID)}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">auto_stories</span>
                     <span class="font-label">{{.Name}}</span>
                 </button>
@@ -59,14 +81,30 @@
             <div class="flex gap-3">
                 <form action="/" method="GET" class="m-0">
                     {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
-                    <button type="submit" name="category" value="" class="px-4 py-1.5 rounded-full bg-primary-container text-primary text-xs font-bold tracking-wider cursor-pointer hover:bg-opacity-80 transition-colors border-none">
+                    <button type="submit" name="category" value="" class="px-4 py-1.5 rounded-full {{if and (not .FilterCategory) (not .FilterAuthored) (not .FilterLiked)}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none">
                         ALL TOPICS
                     </button>
                 </form>
+
+                {{if .IsAuthenticated}}
+                <form action="/" method="GET" class="m-0">
+                    <input type="hidden" name="authored" value="true">
+                    <button type="submit" class="px-4 py-1.5 rounded-full {{if .FilterAuthored}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
+                        My Posts
+                    </button>
+                </form>
+                <form action="/" method="GET" class="m-0">
+                    <input type="hidden" name="liked" value="true">
+                    <button type="submit" class="px-4 py-1.5 rounded-full {{if .FilterLiked}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
+                        Liked Posts
+                    </button>
+                </form>
+                {{end}}
+
                 {{range .Categories}}
                 <form action="/" method="GET" class="m-0">
                     {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
-                    <button type="submit" name="category" value="{{.ID}}" class="px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold tracking-wider cursor-pointer hover:bg-surface-container-high transition-colors border-none">
+                    <button type="submit" name="category" value="{{.ID}}" class="px-4 py-1.5 rounded-full {{if eq $.FilterCategory (printf "%d" .ID)}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
                         {{.Name}}
                     </button>
                 </form>
@@ -117,9 +155,9 @@
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="post">
                             <input type="hidden" name="vote_type" value="1">
-                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors bg-transparent border-none text-on-surface">
+                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors bg-transparent border-none text-on-surface active:scale-90">
                                 <span class="material-symbols-outlined text-[20px]">thumb_up</span>
-                                <span class="text-xs font-bold">{{.Likes}}</span>
+                                <span class="text-xs font-bold" id="likes-post-{{.ID}}">{{.Likes}}</span>
                             </button>
                         </form>
                         
@@ -129,9 +167,9 @@
                             <input type="hidden" name="target_id" value="{{.ID}}">
                             <input type="hidden" name="target_type" value="post">
                             <input type="hidden" name="vote_type" value="-1">
-                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-error transition-colors bg-transparent border-none text-on-surface">
+                            <button type="submit" class="flex items-center gap-1.5 cursor-pointer hover:text-error transition-colors bg-transparent border-none text-on-surface active:scale-90">
                                 <span class="material-symbols-outlined text-[20px]">thumb_down</span>
-                                <span class="text-xs font-bold">{{.Dislikes}}</span>
+                                <span class="text-xs font-bold" id="dislikes-post-{{.ID}}">{{.Dislikes}}</span>
                             </button>
                         </form>
                     </div>
