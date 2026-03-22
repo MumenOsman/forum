@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#ffdad6",
+              "surface-tint": "#9ecaff",
+              "on-background": "#dae2fd",
+              "surface-variant": "#2d3449",
+              "on-secondary-fixed-variant": "#394951",
+              "on-secondary-fixed": "#0d1e25",
+              "primary-fixed": "#d1e4ff",
+              "primary-fixed-dim": "#9ecaff",
+              "inverse-surface": "#dae2fd",
+              "on-primary-container": "#2d9cf9",
+              "outline-variant": "#454652",
+              "surface-container-high": "#222a3d",
+              "surface-container-lowest": "#060e20",
+              "secondary-container": "#3b4b53",
+              "on-tertiary-container": "#c09000",
+              "on-primary": "#003258",
+              "secondary-fixed-dim": "#b8c9d3",
+              "on-primary-fixed": "#001d36",
+              "surface-bright": "#31394d",
+              "inverse-primary": "#0061a4",
+              "tertiary": "#fabd00",
+              "on-tertiary-fixed-variant": "#5b4300",
+              "error": "#ffb4ab",
+              "primary-container": "#003157",
+              "surface-container-low": "#131b2e",
+              "inverse-on-surface": "#283044",
+              "tertiary-fixed": "#ffdf9e",
+              "primary": "#9ecaff",
+              "surface-container-highest": "#2d3449",
+              "surface-container": "#171f33",
+              "on-surface-variant": "#c6c5d4",
+              "on-tertiary": "#3f2e00",
+              "surface-dim": "#0b1326",
+              "secondary": "#b8c9d3",
+              "on-surface": "#dae2fd",
+              "error-container": "#93000a",
+              "tertiary-fixed-dim": "#fabd00",
+              "on-secondary": "#23333a",
+              "secondary-fixed": "#d4e5ef",
+              "tertiary-container": "#3f2d00",
+              "background": "#0b1326",
+              "on-secondary-container": "#aabbc5",
+              "surface": "#0b1326",
+              "on-error": "#690005",
+              "outline": "#908f9d",
+              "on-tertiary-fixed": "#261a00",
+              "on-primary-fixed-variant": "#00497d"
+            },
+            fontFamily: {
+              "headline": ["Newsreader"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .glass-morphism {
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+        }
+        .text-glow {
+            text-shadow: 0 0 15px rgba(158, 202, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-primary min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#171f33]/70 backdrop-blur-xl saturate-180 border-b border-[#dae2fd]/15 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+<div class="flex justify-between items-center w-full px-8 py-4 mx-auto max-w-screen-2xl">
+<!-- Brand Logo -->
+<div class="text-2xl font-serif italic text-[#fabd00] font-headline">
+                Literary Lions Forum
+            </div>
+<!-- Navigation Links - Hidden on Mobile, suppress active state as this is Login page -->
+<div class="hidden md:flex items-center space-y-0 space-x-8">
+<a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-label text-sm font-medium tracking-wide" href="#">Home</a>
+<a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-label text-sm font-medium tracking-wide" href="#">Search</a>
+<a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-label text-sm font-medium tracking-wide" href="#">My Posts</a>
+<a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-label text-sm font-medium tracking-wide" href="#">Liked Posts</a>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-6">
+<a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-label text-sm font-medium tracking-wide" href="#">Register</a>
+<a class="text-[#9ecaff] border-b-2 border-[#9ecaff] pb-1 font-label text-sm font-medium tracking-wide" href="#">Login</a>
+</div>
+</div>
+</nav>
+<!-- Main Content: Login Shell -->
+<main class="flex-grow flex items-center justify-center relative px-6 py-24 overflow-hidden">
+<!-- Background Decorative Elements (Vellum Texture/Ink Bleed feel) -->
+<div class="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-tertiary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="w-full max-w-md z-10">
+<!-- Error Banner Placeholder (Active State Example) -->
+<div class="mb-6 rounded-xl border border-error/20 bg-error-container/10 glass-morphism p-4 flex items-start gap-3 shadow-xl">
+<span class="material-symbols-outlined text-error mt-0.5" data-icon="error">error</span>
+<div class="flex-grow">
+<p class="text-sm font-label font-medium text-on-error-container">Invalid credentials. Please try again.</p>
+</div>
+</div>
+<!-- Login Card -->
+<div class="bg-surface-container/70 glass-morphism rounded-xl p-8 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.3)] border border-outline-variant/15">
+<div class="mb-10 text-center">
+<h1 class="font-headline text-3xl md:text-4xl text-on-surface mb-3 tracking-tight">Welcome Back, Literary Lion</h1>
+<p class="font-body text-on-surface-variant/80 text-sm">Continue your journey through the digital archives.</p>
+</div>
+<form class="space-y-8">
+<!-- Email Field -->
+<div class="group">
+<label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary mb-2" for="email">Email Address</label>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="email" name="email" placeholder="scholar@alexandria.edu" type="email"/>
+<div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
+</div>
+</div>
+<!-- Password Field -->
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary" for="password">Password</label>
+<a class="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Forgot?</a>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="password" name="password" placeholder="••••••••" type="password"/>
+<div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full group relative flex items-center justify-center py-4 px-6 bg-gradient-to-br from-primary to-primary-container text-on-primary font-label font-bold text-sm tracking-widest rounded-md overflow-hidden transition-all active:scale-[0.98] shadow-lg shadow-primary/10" type="submit">
+<span class="relative z-10">LOGIN</span>
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+</form>
+<!-- Footer Link -->
+<div class="mt-10 text-center">
+<p class="font-body text-sm text-on-surface-variant">
+                        New to the forum? 
+                        <a class="text-primary font-bold hover:underline underline-offset-4 ml-1 transition-all" href="#">Sign Up instead</a>
+</p>
+</div>
+</div>
+<!-- Bottom Graphic/Quote -->
+<div class="mt-12 text-center opacity-40">
+<p class="font-headline italic text-lg text-on-background">"A room without books is like a body without a soul."</p>
+<p class="font-label text-[10px] uppercase tracking-[0.2em] mt-2">— Cicero</p>
+</div>
+</div>
+</main>
+<!-- Minimal Footer (Suppressing Nav Shell as per Task logic) -->
+<footer class="py-8 px-8 border-t border-outline-variant/10">
+<div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-outline-variant text-[10px] font-label tracking-widest">
+<p>© 2024 LITERARY LIONS FORUM. ALL RIGHTS RESERVED.</p>
+<div class="flex gap-6">
+<a class="hover:text-on-surface transition-colors" href="#">PRIVACY POLICY</a>
+<a class="hover:text-on-surface transition-colors" href="#">TERMS OF SERVICE</a>
+<a class="hover:text-on-surface transition-colors" href="#">ARCHIVE RULES</a>
+</div>
+</div>
+</footer>
+</body></html>
