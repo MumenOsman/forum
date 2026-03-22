@@ -72,13 +72,6 @@
     <div class="flex justify-between items-center w-full px-8 py-4 mx-auto max-w-screen-2xl">
         <div class="flex items-center gap-8">
             <a href="/" class="text-2xl font-serif italic text-[#fabd00] serif-headline no-underline hover:brightness-125 transition-all">Literary Lions Forum</a>
-            {{if .IsAuthenticated}}
-            <div class="hidden md:flex gap-6 items-center">
-                <a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-medium text-sm tracking-wide" href="/">Home</a>
-                <a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-medium text-sm tracking-wide" href="/?authored=true">My Posts</a>
-                <a class="text-[#dae2fd]/70 hover:text-[#dae2fd] transition-colors font-medium text-sm tracking-wide" href="/?liked=true">Liked Posts</a>
-            </div>
-            {{end}}
         </div>
         <div class="flex items-center gap-4">
             {{if .IsAuthenticated}}
