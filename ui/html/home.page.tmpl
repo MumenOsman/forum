@@ -64,53 +64,10 @@
             {{end}}
         </nav>
         
-        {{if .IsAuthenticated}}
-        <div class="pt-6 pb-2 border-t border-outline-variant/10">
-            <a href="/post/create" class="w-full flex items-center justify-center gap-2 py-3 bg-[#222a3d] text-[#fabd00] rounded-md font-bold hover:brightness-125 shadow-lg border border-tertiary/20 no-underline transition-all active:scale-95">
-                <span class="material-symbols-outlined">add_circle</span>
-                <span class="font-label">Create Post</span>
-            </a>
-        </div>
-        {{end}}
     </aside>
 
     <!-- Main Content Canvas -->
     <main class="flex-grow lg:ml-64 px-4 md:px-12 py-8 max-w-4xl mx-auto w-full">
-        <!-- Category Chips -->
-        <section class="mb-10 overflow-x-auto whitespace-nowrap pb-2 no-scrollbar">
-            <div class="flex gap-3">
-                <form action="/" method="GET" class="m-0">
-                    {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
-                    <button type="submit" name="category" value="" class="px-4 py-1.5 rounded-full {{if and (not .FilterCategory) (not .FilterAuthored) (not .FilterLiked)}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none">
-                        ALL TOPICS
-                    </button>
-                </form>
-
-                {{if .IsAuthenticated}}
-                <form action="/" method="GET" class="m-0">
-                    <input type="hidden" name="authored" value="true">
-                    <button type="submit" class="px-4 py-1.5 rounded-full {{if .FilterAuthored}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
-                        My Posts
-                    </button>
-                </form>
-                <form action="/" method="GET" class="m-0">
-                    <input type="hidden" name="liked" value="true">
-                    <button type="submit" class="px-4 py-1.5 rounded-full {{if .FilterLiked}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
-                        Liked Posts
-                    </button>
-                </form>
-                {{end}}
-
-                {{range .Categories}}
-                <form action="/" method="GET" class="m-0">
-                    {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
-                    <button type="submit" name="category" value="{{.ID}}" class="px-4 py-1.5 rounded-full {{if eq $.FilterCategory (printf "%d" .ID)}}bg-primary text-on-primary{{else}}bg-secondary-container text-on-secondary-container hover:bg-surface-container-high{{end}} text-xs font-bold tracking-wider cursor-pointer transition-colors border-none uppercase">
-                        {{.Name}}
-                    </button>
-                </form>
-                {{end}}
-            </div>
-        </section>
 
         <!-- Post Feed Column -->
         <div class="space-y-8">
