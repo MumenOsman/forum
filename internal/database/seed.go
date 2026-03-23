@@ -8,7 +8,7 @@ import (
 
 // SeedDemoData is the main entry point for populating the database with demo content.
 func SeedDemoData(db *sql.DB) {
-	fmt.Println("Seeding expanded demo data with full content and chronological staggering...")
+	fmt.Println("Seeding expanded demo data with full content and chronological staggering (cleaned formatting)...")
 	seedUsers(db)
 	seedPosts(db)
 	seedComments(db)
@@ -117,13 +117,13 @@ But let's be honest: the prose can be as dry as the Arrakis desert. Herbert isn'
 			createdAt: "2026-03-18 12:05:00",
 			content: `One of the most common pitfalls I see in modern fantasy is the "Deus Ex Machina" magic system—where a character suddenly discovers a new power just in time to escape a corner. To me, a magic system only feels real when it has limitations. Here’s a quick guide on building systems that actually stick with the reader:
 
-1. **Hard vs. Soft Magic**: Are you writing like Brandon Sanderson (Hard Magic), where the reader knows the exact rules and costs? Or like Tolkien (Soft Magic), where the power is mysterious and atmospheric? Both work, but you cannot switch mid-stream to solve a plot point. If you use Soft Magic, it should never be the primary tool for solving a conflict.
+1. Hard vs. Soft Magic: Are you writing like Brandon Sanderson (Hard Magic), where the reader knows the exact rules and costs? Or like Tolkien (Soft Magic), where the power is mysterious and atmospheric? Both work, but you cannot switch mid-stream to solve a plot point. If you use Soft Magic, it should never be the primary tool for solving a conflict.
 
-2. **Establish the Cost**: Magic should never be free. Does it drain physical stamina? Does it require expensive material components? Does it cost a piece of the user's memory? When magic has a high price, every use becomes a high-stakes decision for the character.
+2. Establish the Cost: Magic should never be free. Does it drain physical stamina? Does it require expensive material components? Does it cost a piece of the user's memory? When magic has a high price, every use becomes a high-stakes decision for the character.
 
-3. **Limitations Breed Creativity**: Instead of asking what your magic *can* do, ask what it *cannot* do. A character who can only move metal is much more interesting than a character who can simply "do magic." Limitations force characters to think their way out of problems, which makes for better storytelling.
+3. Limitations Breed Creativity: Instead of asking what your magic can do, ask what it cannot do. A character who can only move metal is much more interesting than a character who can simply "do magic." Limitations force characters to think their way out of problems, which makes for better storytelling.
 
-4. **Internal Consistency**: Once you set a rule, you must never break it. If your magic depends on moonlight, don't let a character use it in a cave unless you've spent the whole book explaining a way to store lunar energy. Consistency builds trust with your audience.`,
+4. Internal Consistency: Once you set a rule, you must never break it. If your magic depends on moonlight, don't let a character use it in a cave unless you've spent the whole book explaining a way to store lunar energy. Consistency builds trust with your audience.`,
 		},
 		{
 			id:        "post-elara-4",
@@ -177,13 +177,13 @@ The book is an exhaustive study of the birth of the American administrative stat
 			createdAt: "2026-03-19 14:15:00",
 			content: `Writing historical fiction is a balancing act that many fail. Lean too far into "Fact" and you have a dry academic paper; lean too far into "Fiction" and you risk alienating the very readers attracted to the era. Here is my advice for finding the middle ground:
 
-1. **The 'In-Between' Spaces**: The best place for fiction is in the gaps left by the historical record. We know *what* happened in 1536, but we don't always know *what was said* behind closed doors. That is where your story lives.
+1. The 'In-Between' Spaces: The best place for fiction is in the gaps left by the historical record. We know what happened in 1536, but we don't always know what was said behind closed doors. That is where your story lives.
 
-2. **Research for Atmosphere, Not Just Facts**: Don't just look up dates. Research what people ate, how their clothes felt, what the air smelled like in a crowded 18th-century street. These sensory details anchor the reader more than a list of battle statistics.
+2. Research for Atmosphere, Not Just Facts: Don't just look up dates. Research what people ate, how their clothes felt, what the air smelled like in a crowded 18th-century street. These sensory details anchor the reader more than a list of battle statistics.
 
-3. **The "Enough" Rule**: Stop researching when you start finding the same information over and over. You don't need to be an expert on medieval tax law to write a story about a squire, but you do need to know enough to not make him sound like a 21st-century teenager.
+3. The "Enough" Rule: Stop researching when you start finding the same information over and over. You don't need to be an expert on medieval tax law to write a story about a squire, but you do need to know enough to not make him sound like a 21st-century teenager.
 
-4. **Honesty About Inaccuracy**: If you must change a date for the sake of the plot, own it in an Author's Note. Most historical readers will forgive a minor shift if the story is compelling, but they will never forgive being lied to.`,
+4. Honesty About Inaccuracy: If you must change a date for the sake of the plot, own it in an Author's Note. Most historical readers will forgive a minor shift if the story is compelling, but they will never forgive being lied to.`,
 		},
 		{
 			id:        "post-marcus-4",
@@ -237,13 +237,13 @@ It’s a very dark look at a toxic marriage and how well we actually know the pe
 			createdAt: "2026-03-20 20:30:00",
 			content: `Is there anything better in a book than a perfectly executed slow burn? That feeling of "will they, won't they" that keeps you up all night turning pages? 💖 Here are my tips for making the tension absolutely unbearable (in a good way!):
 
-1. **Forced Proximity**: Put them in a situation where they can’t escape each other! A long road trip, stuck in an elevator, or (my favorite) the "only one bed" trope! It forces them to interact when they aren't ready for it. 🏨
+1. Forced Proximity: Put them in a situation where they can’t escape each other! A long road trip, stuck in an elevator, or (my favorite) the "only one bed" trope! It forces them to interact when they aren't ready for it. 🏨
 
-2. **Micro-Tensions**: It’s not about the big kiss! It’s about the "accidental" hand brush, the look from across the room, or the way he remembers her favorite coffee order. Those tiny details build the foundation for the big moments.
+2. Micro-Tensions: It’s not about the big kiss! It’s about the "accidental" hand brush, the look from across the room, or the way he remembers her favorite coffee order. Those tiny details build the foundation for the big moments.
 
-3. **External Stakes**: Give them a reason why they *can't* be together right now. Is it a family feud? A career rivalry? A secret they're hiding? The external conflict keeps them apart while the internal feelings are pulling them together.
+3. External Stakes: Give them a reason why they can't be together right now. Is it a family feud? A career rivalry? A secret they're hiding? The external conflict keeps them apart while the internal feelings are pulling them together.
 
-4. **Delay the Payoff**: Don't give in too early! Let the reader get just a little bit frustrated. If they kiss on page 50, the tension is gone. Wait until they've almost lost each other before the big emotional payoff. Trust me, it makes the ending so much sweeter! 🍭✨`,
+4. Delay the Payoff: Don't give in too early! Let the reader get just a little bit frustrated. If they kiss on page 50, the tension is gone. Wait until they've almost lost each other before the big emotional payoff. Trust me, it makes the ending so much sweeter! 🍭✨`,
 		},
 		{
 			id:        "post-chloe-4",
@@ -269,7 +269,7 @@ Compared to the brilliant psychological layering of his first book, this one fel
 			createdAt: "2026-03-07 16:45:00",
 			content: `Daniel Kahneman’s "Thinking, Fast and Slow" is required reading for anyone interested in why they make mistakes. The core concept is simple: we have two systems of thought. 
 
-**System 1** is fast, instinctive, and emotional. It’s what lets us recognize a face or drive a familiar route without thinking. **System 2** is slower, more deliberative, and logical. It handles complex math and difficult decisions.
+System 1 is fast, instinctive, and emotional. It’s what lets us recognize a face or drive a familiar route without thinking. System 2 is slower, more deliberative, and logical. It handles complex math and difficult decisions.
 
 The problem, as Kahneman explains, is that System 1 is lazy and likes to take shortcuts, which leads to cognitive biases like the "availability heuristic" or "loss aversion." Since reading this, I’ve started pausing before making any significant purchase or business decision to ask: "Is this System 1's impulse or System 2's analysis?" 
 
@@ -285,11 +285,11 @@ It’s a dense, academic book, and you can skip the statistics sections if you'r
 			createdAt: "2026-03-16 08:20:00",
 			content: `People often ask me how I manage to read so much while running a business. It’s not about "speed reading" (which is mostly a myth); it’s about systems. Here is my 3-step process:
 
-1. **The DNF Rule**: Life is too short for bad books. If you aren't hooked by page 50, stop reading. Do not let a boring book create a "reading bottleneck" where you don't read anything for a month because you feel guilty about not finishing it. Move on.
+1. The DNF Rule: Life is too short for bad books. If you aren't hooked by page 50, stop reading. Do not let a boring book create a "reading bottleneck" where you don't read anything for a month because you feel guilty about not finishing it. Move on.
 
-2. **Audiobooks for "Dead Time"**: I "read" while driving, at the gym, and doing chores. Non-fiction is particularly suited to audio. If you spend 30 minutes a day commuting, that’s 2.5 hours a week of reading time you didn't have before.
+2. Audiobooks for "Dead Time": I "read" while driving, at the gym, and doing chores. Non-fiction is particularly suited to audio. If you spend 30 minutes a day commuting, that’s 2.5 hours a week of reading time you didn't have before.
 
-3. **The Morning 20**: Read for 20 minutes before you check your phone. No emails, no news, no social media. Just you and a book. It sets a productive tone for the day and ensures that even on your busiest days, you’ve made progress.
+3. The Morning 20: Read for 20 minutes before you check your phone. No emails, no news, no social media. Just you and a book. It sets a productive tone for the day and ensures that even on your busiest days, you’ve made progress.
 
 Consistency beats intensity every time. You don't need a 4-hour block of time; you just need to stop wasting the 10-minute blocks you already have.`,
 		},
@@ -317,11 +317,11 @@ Is it worth reading? Yes, because the repetition actually helps the concepts sti
 			createdAt: "2026-03-23 14:18:00",
 			content: `As we cross the halfway mark of the 2020s, I wanted to share the five books from the last decade that have had the biggest impact on my worldview. Most of these are non-fiction, but they all share a commitment to objective truth and actionable insights.
 
-1. **The Selfish Gene (Updated Edition)** - Dawkins. The foundation of understanding biology and human competition.
-2. **Sapiens** - Yuval Noah Harari. A brilliant, if sometimes controversial, look at the stories that hold our society together.
-3. **The Big Short** - Michael Lewis. The best explanation of financial systems and the danger of groupthink.
-4. **Bad Blood** - John Carreyrou. A masterclass in investigative journalism and the dangers of the Silicon Valley "fake it 'til you make it" culture.
-5. **Flow** - Mihaly Csikszentmihalyi. The science of optimal experience. This should be required reading for every professional.
+1. The Selfish Gene (Updated Edition) - Dawkins. The foundation of understanding biology and human competition.
+2. Sapiens - Yuval Noah Harari. A brilliant, if sometimes controversial, look at the stories that hold our society together.
+3. The Big Short - Michael Lewis. The best explanation of financial systems and the danger of groupthink.
+4. Bad Blood - John Carreyrou. A masterclass in investigative journalism and the dangers of the Silicon Valley "fake it 'til you make it" culture.
+5. Flow - Mihaly Csikszentmihalyi. The science of optimal experience. This should be required reading for every professional.
 
 What are yours? Keep it brief—I value the quality of the list over the quantity.`,
 		},
@@ -333,13 +333,13 @@ What are yours? Keep it brief—I value the quality of the list over the quantit
 			likes:     35,
 			dislikes:  1,
 			createdAt: "2026-03-08 11:10:00",
-			content: `The eternal debate among writers: are you an **Outliner** (Plotter) or a **Pantser** (Discovery Writer)? As someone currently in the trenches of my first draft, I’ve realized that most of us fall somewhere in the middle. 
+			content: `The eternal debate among writers: are you an Outliner (Plotter) or a Pantser (Discovery Writer)? As someone currently in the trenches of my first draft, I’ve realized that most of us fall somewhere in the middle. 
 
-**Outlining** gives you a roadmap. You know your beats, your twists, and your ending before you type "Chapter 1." It prevents that dreaded "middle-of-the-book slump" because you always know what needs to happen next. But some say it kills the magic of discovery.
+Outlining gives you a roadmap. You know your beats, your twists, and your ending before you type "Chapter 1." It prevents that dreaded "middle-of-the-book slump" because you always know what needs to happen next. But some say it kills the magic of discovery.
 
-**Pantsing** (writing by the seat of your pants) allows characters to surprise you. The story feels organic because even the author doesn't know what’s coming. The downside? You often end up with 100,000 words that go nowhere and require a massive, painful rewrite.
+Pantsing (writing by the seat of your pants) allows characters to surprise you. The story feels organic because even the author doesn't know what’s coming. The downside? You often end up with 100,000 words that go nowhere and require a massive, painful rewrite.
 
-My advice? **Plantser** it. Outline the major "tentpole" moments (The Inciting Incident, The Midpoint, The Climax), but leave the path between them open to exploration. It gives you the safety of a structure with the freedom to let the characters breathe. What’s your style? I’m finding that the older I get, the more I crave the safety of a plan!`,
+My advice? Plantser it. Outline the major "tentpole" moments (The Inciting Incident, The Midpoint, The Climax), but leave the path between them open to exploration. It gives you the safety of a structure with the freedom to let the characters breathe. What’s your style? I’m finding that the older I get, the more I crave the safety of a plan!`,
 		},
 		{
 			id:        "post-sarah-2",
@@ -363,15 +363,15 @@ It’s a masterclass in building tension through character dynamics rather than 
 			likes:     28,
 			dislikes:  0,
 			createdAt: "2026-03-21 17:50:00",
-			content: `In a good mystery, the reader wants to be fooled, but they also want to feel like they *could* have solved it if they were just a little smarter. Enter the **Red Herring**. Here’s how to use them without making your reader feel cheated:
+			content: `In a good mystery, the reader wants to be fooled, but they also want to feel like they could have solved it if they were just a little smarter. Enter the Red Herring. Here’s how to use them without making your reader feel cheated:
 
-1. **The 'Loud' Clue**: Make a red herring look like the most important thing in the room. If a character is suspiciously cleaning a knife when the detective walks in, the reader will focus on it—meanwhile, the real clue is something small and unnoticed in the background.
+1. The 'Loud' Clue: Make a red herring look like the most important thing in the room. If a character is suspiciously cleaning a knife when the detective walks in, the reader will focus on it—meanwhile, the real clue is something small and unnoticed in the background.
 
-2. **Justify the Suspicion**: A red herring shouldn't just be a random lie. If a character is acting weirdly, they should have a *reason* for it that isn't the murder. Maybe they’re hiding an affair, or a gambling debt. This makes them a valid suspect for the reader while keeping the plot grounded.
+2. Justify the Suspicion: A red herring shouldn't just be a random lie. If a character is acting weirdly, they should have a reason for it that isn't the murder. Maybe they’re hiding an affair, or a gambling debt. This makes them a valid suspect for the reader while keeping the plot grounded.
 
-3. **Follow the 'Fair Play' Rule**: You must give the reader all the information they need to spot the red herring. If the knife is the red herring, there should be a throwaway line later about the character preparing for a dinner party. 
+3. Follow the 'Fair Play' Rule: You must give the reader all the information they need to spot the red herring. If the knife is the red herring, there should be a throwaway line later about the character preparing for a dinner party. 
 
-4. **Synchronicity**: Drop the real clue and the red herring at the same time. The reader's brain will usually latch onto the more dramatic of the two, letting the real truth hide in plain sight. Happy plotting! 🖋️🕵️‍♂️`,
+4. Synchronicity: Drop the real clue and the red herring at the same time. The reader's brain will usually latch onto the more dramatic of the two, letting the real truth hide in plain sight. Happy plotting! 🖋️🕵️‍♂️`,
 		},
 		{
 			id:        "post-sarah-4",
@@ -385,7 +385,7 @@ It’s a masterclass in building tension through character dynamics rather than 
 
 Following Sam and Sadie (and Marx, the unsung hero!) over thirty years was like watching a real life unfold. Zevin captures the way friendships drift, collide, and reshape themselves with such painful accuracy. As a writer, I was floored by how she depicted the "creative partnership"—that intense, often toxic, always inspiring connection that happens when two people build a world together.
 
-Even if you aren't a "gamer," the sections describing the games they build are so evocative. They mirror the characters' internal states perfectly. It’s a masterclass in how to show, not tell. It’s a long book, and it doesn't always go where you want it to, but it feels *true*. If you want a deep dive into what it means to love someone you can't quite be with and haven't quite lost, this is it. Brilliant.`,
+Even if you aren't a "gamer," the sections describing the games they build are so evocative. They mirror the characters' internal states perfectly. It’s a masterclass in how to show, not tell. It’s a long book, and it doesn't always go where you want it to, but it feels true. If you want a deep dive into what it means to love someone you can't quite be with and haven't quite lost, this is it. Brilliant.`,
 		},
 	}
 
