@@ -1,40 +1,56 @@
 {{define "base"}}
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Literary Lions Forum</title>
+    <title>The Daily Inkwell</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@200..800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "on-error-container": "#ffdad6", "surface-tint": "#9ecaff", "on-background": "#dae2fd",
-                        "surface-variant": "#2d3449", "on-secondary-fixed-variant": "#394951", "on-secondary-fixed": "#0d1e25",
-                        "primary-fixed": "#d1e4ff", "primary-fixed-dim": "#9ecaff", "inverse-surface": "#dae2fd",
-                        "on-primary-container": "#2d9cf9", "outline-variant": "#454652", "surface-container-high": "#222a3d",
-                        "surface-container-lowest": "#060e20", "secondary-container": "#3b4b53", "on-tertiary-container": "#c09000",
-                        "on-primary": "#003258", "secondary-fixed-dim": "#b8c9d3", "on-primary-fixed": "#001d36",
-                        "surface-bright": "#31394d", "inverse-primary": "#0061a4", "tertiary": "#fabd00",
-                        "on-tertiary-fixed-variant": "#5b4300", "error": "#ffb4ab", "primary-container": "#003157",
-                        "surface-container-low": "#131b2e", "inverse-on-surface": "#283044", "tertiary-fixed": "#ffdf9e",
-                        "primary": "#9ecaff", "surface-container-highest": "#2d3449", "surface-container": "#171f33",
-                        "on-surface-variant": "#c6c5d4", "on-tertiary": "#3f2e00", "surface-dim": "#0b1326",
-                        "secondary": "#b8c9d3", "on-surface": "#dae2fd", "error-container": "#93000a",
-                        "tertiary-fixed-dim": "#fabd00", "on-secondary": "#23333a", "secondary-fixed": "#d4e5ef",
-                        "tertiary-container": "#3f2d00", "background": "#0b1326", "on-secondary-container": "#aabbc5",
-                        "surface": "#0b1326", "on-error": "#690005", "outline": "#908f9d", "on-tertiary-fixed": "#261a00",
-                        "on-primary-fixed-variant": "#00497d"
+                        /* Nord Polar Night (Darks) */
+                        "nord0": "#2e3440", "nord1": "#3b4252", "nord2": "#434c5e", "nord3": "#4c566a",
+                        /* Nord Snow Storm (Lights) */
+                        "nord4": "#d8dee9", "nord5": "#e5e9f0", "nord6": "#eceff4",
+                        /* Nord Frost (Accents) */
+                        "nord7": "#8fbcbb", "nord8": "#88c0d0", "nord9": "#81a1c1", "nord10": "#5e81ac",
+                        /* Nord Aurora (Status) */
+                        "nord11": "#bf616a", "nord12": "#d08770", "nord13": "#ebcb8b",
+                        "nord14": "#a3be8c", "nord15": "#b48ead",
+                        /* Mapped semantic tokens (dark mode defaults) */
+                        "background": "#2e3440", "surface": "#2e3440",
+                        "surface-container": "#3b4252", "surface-container-low": "#353b49",
+                        "surface-container-high": "#434c5e", "surface-container-highest": "#4c566a",
+                        "surface-container-lowest": "#272c36",
+                        "on-surface": "#d8dee9", "on-surface-variant": "#4c566a",
+                        "primary": "#88c0d0", "on-primary": "#2e3440",
+                        "tertiary": "#ebcb8b", "error": "#bf616a",
+                        "outline": "#4c566a", "outline-variant": "#434c5e",
+                        "primary-container": "#5e81ac", "on-primary-container": "#eceff4",
+                        "secondary-container": "#434c5e", "on-secondary-container": "#d8dee9",
                     },
                     fontFamily: {
                         "headline": ["Newsreader"], "body": ["Manrope"], "label": ["Manrope"]
                     },
-                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                    borderRadius: {"DEFAULT": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
                 },
             },
         }
@@ -42,53 +58,310 @@
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            display: inline-block;
-            line-height: 1;
-            text-transform: none;
-            letter-spacing: normal;
-            word-wrap: normal;
-            white-space: nowrap;
-            direction: ltr;
+            display: inline-block; line-height: 1; text-transform: none;
+            letter-spacing: normal; word-wrap: normal; white-space: nowrap; direction: ltr;
         }
-        body {
-            background-color: #0b1326;
-            color: #dae2fd;
-            font-family: 'Manrope', sans-serif;
-            margin: 0; padding: 0;
+
+        /* ===== GLOBAL SCROLLBAR — blends with Nord theme ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        /* Dark mode scrollbar thumb */
+        html.dark ::-webkit-scrollbar-thumb {
+            background-color: rgba(76, 86, 106, 0.45);
+            border-radius: 4px;
         }
-        .serif-headline {
-            font-family: 'Newsreader', serif;
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(76, 86, 106, 0.7);
         }
+        /* Light mode scrollbar thumb */
+        html.light ::-webkit-scrollbar-thumb {
+            background-color: rgba(76, 86, 106, 0.2);
+            border-radius: 4px;
+        }
+        html.light ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(76, 86, 106, 0.4);
+        }
+        /* Firefox */
+        html.dark * { scrollbar-color: rgba(76, 86, 106, 0.45) transparent; scrollbar-width: thin; }
+        html.light * { scrollbar-color: rgba(76, 86, 106, 0.2) transparent; scrollbar-width: thin; }
+
+        /* ===== NORD DARK MODE (default) ===== */
+        html.dark body { background-color: #2e3440; color: #d8dee9; }
+        html.dark .top-nav {
+            background: rgba(59, 66, 82, 0.80);
+            border-bottom: 1px solid rgba(76, 86, 106, 0.3);
+            backdrop-filter: blur(12px) saturate(180%);
+        }
+        html.dark .sidebar-bg {
+            background-color: #353b49;
+            border-right: 1px solid rgba(76, 86, 106, 0.2);
+        }
+        html.dark .theme-toggle-icon { color: #ebcb8b; }
+        html.dark .brand-title { color: #88c0d0; }
+        html.dark .hamburger-btn { color: #d8dee9; }
+
+        /* ===== NORD LIGHT MODE ===== */
+        html.light body { background-color: #eceff4; color: #2e3440; }
+        html.light .top-nav {
+            background: rgba(229, 233, 240, 0.85);
+            border-bottom: 1px solid rgba(76, 86, 106, 0.15);
+            backdrop-filter: blur(12px) saturate(180%);
+        }
+        html.light .sidebar-bg {
+            background-color: #e5e9f0;
+            border-right: 1px solid rgba(76, 86, 106, 0.12);
+        }
+        html.light .theme-toggle-icon { color: #5e81ac; }
+        html.light .brand-title { color: #5e81ac; }
+        html.light .hamburger-btn { color: #2e3440; }
+
+        /* ---- Light mode: text overrides ---- */
+        html.light .text-on-surface { color: #2e3440 !important; }
+        html.light .text-on-surface-variant { color: #4c566a !important; }
+        html.light .text-primary { color: #5e81ac !important; }
+        html.light .text-tertiary { color: #d08770 !important; }
+        html.light .text-error { color: #bf616a !important; }
+        html.light .text-on-primary { color: #eceff4 !important; }
+        html.light .text-on-secondary-container { color: #4c566a !important; }
+
+        /* Hardcoded dark text → light equivalents */
+        html.light .text-\[\#dae2fd\],
+        html.light .text-\[\#e4e2de\],
+        html.light .text-\[\#d8dee9\] { color: #2e3440 !important; }
+        html.light .text-\[\#d0c5af\],
+        html.light .text-\[\#4c566a\] { color: #4c566a !important; }
+        html.light .text-\[\#f2ca50\],
+        html.light .text-\[\#fabd00\],
+        html.light .text-\[\#88c0d0\] { color: #5e81ac !important; }
+        html.light .text-\[\#dae2fd\]\/60 { color: #4c566a !important; }
+        html.light .text-\[\#dae2fd\]\/70 { color: #3b4252 !important; }
+        html.light .text-\[\#f87171\],
+        html.light .text-\[\#fca5a5\] { color: #bf616a !important; }
+
+        /* ---- Light mode: background overrides ---- */
+        html.light .bg-background,
+        html.light .bg-surface,
+        html.light .bg-\[\#131313\],
+        html.light .bg-\[\#2e3440\],
+        html.light .bg-\[\#0b1326\] { background-color: #eceff4 !important; }
+
+        html.light .bg-surface-container,
+        html.light .bg-\[\#1e1e1e\],
+        html.light .bg-\[\#3b4252\],
+        html.light .bg-\[\#171f33\] { background-color: #e5e9f0 !important; }
+
+        html.light .bg-surface-container-low,
+        html.light .bg-\[\#1a1a1a\],
+        html.light .bg-\[\#353b49\],
+        html.light .bg-\[\#131b2e\] { background-color: #e5e9f0 !important; }
+
+        html.light .bg-surface-container-high,
+        html.light .bg-\[\#252525\],
+        html.light .bg-\[\#434c5e\],
+        html.light .bg-\[\#222a3d\] { background-color: #d8dee9 !important; }
+
+        html.light .bg-surface-container-highest,
+        html.light .bg-\[\#353535\],
+        html.light .bg-\[\#4c566a\],
+        html.light .bg-\[\#2d3449\] { background-color: #d8dee9 !important; }
+
+        html.light .bg-surface-container-lowest,
+        html.light .bg-\[\#0e0e0e\],
+        html.light .bg-\[\#272c36\],
+        html.light .bg-\[\#060e20\] { background-color: #eceff4 !important; }
+
+        html.light .bg-surface-container\/60,
+        html.light .bg-surface-container\/40,
+        html.light .bg-surface-container\/30 { background-color: rgba(229, 233, 240, 0.85) !important; }
+
+        html.light .bg-surface-container-low\/50 { background-color: rgba(229, 233, 240, 0.6) !important; }
+
+        html.light .bg-primary { background-color: #5e81ac !important; }
+        html.light .bg-primary-container { background-color: #81a1c1 !important; }
+        html.light .bg-secondary-container { background-color: #d8dee9 !important; }
+        html.light .bg-primary\/20 { background-color: rgba(94, 129, 172, 0.15) !important; }
+        html.light .bg-error\/5 { background-color: rgba(191, 97, 106, 0.05) !important; }
+        html.light .bg-error\/10 { background-color: rgba(191, 97, 106, 0.08) !important; }
+        html.light .bg-error\/20 { background-color: rgba(191, 97, 106, 0.12) !important; }
+        html.light .bg-tertiary\/10 { background-color: rgba(208, 135, 112, 0.1) !important; }
+
+        /* ---- Light mode: border overrides ---- */
+        html.light .border-outline-variant\/30,
+        html.light .border-outline-variant\/20,
+        html.light .border-outline-variant\/15,
+        html.light .border-outline-variant\/10,
+        html.light .border-outline-variant\/5 { border-color: rgba(76, 86, 106, 0.15) !important; }
+
+        html.light .border-\[\#dae2fd\]\/15,
+        html.light .border-\[\#dae2fd\]\/10 { border-color: rgba(76, 86, 106, 0.12) !important; }
+
+        html.light .border-primary\/20 { border-color: rgba(94, 129, 172, 0.2) !important; }
+        html.light .border-tertiary\/50 { border-color: rgba(208, 135, 112, 0.4) !important; }
+        html.light .border-error\/30,
+        html.light .border-error\/50 { border-color: rgba(191, 97, 106, 0.3) !important; }
+
+        /* ---- Light mode: shadow overrides ---- */
+        html.light .shadow-\[0_10px_30px_rgba\(0\,0\,0\,0\.2\)\] {
+            box-shadow: 0 10px 30px rgba(46, 52, 64, 0.08) !important;
+        }
+        html.light .shadow-\[0_20px_40px_rgba\(0\,0\,0\,0\.05\)\] {
+            box-shadow: 0 20px 40px rgba(46, 52, 64, 0.04) !important;
+        }
+        html.light .shadow-lg { box-shadow: 0 10px 25px rgba(46, 52, 64, 0.08) !important; }
+
+        /* ---- Light mode: hover states ---- */
+        html.light .hover\:bg-\[\#171f33\]:hover,
+        html.light .hover\:bg-\[\#3b4252\]:hover { background-color: rgba(76, 86, 106, 0.12) !important; }
+        html.light .hover\:text-\[\#dae2fd\]:hover,
+        html.light .hover\:text-\[\#d8dee9\]:hover { color: #2e3440 !important; }
+        html.light .text-\[\#88c0d0\] { color: #5e81ac !important; }
+        html.light .text-\[\#4c566a\] { color: #4c566a !important; }
+        html.light .bg-\[\#3b4252\] { background-color: rgba(76, 86, 106, 0.12) !important; }
+
+        /* ---- Light mode: headlines & links ---- */
+        html.light .serif-headline,
+        html.light .font-headline,
+        html.light h1, html.light h2, html.light h3 { color: #2e3440; }
+        html.light a.text-primary:hover { color: #81a1c1 !important; }
+
+        /* ---- Misc light overrides ---- */
+        html.light .bg-\[\#1a3a2a\] { background-color: rgba(163, 190, 140, 0.15) !important; }
+        html.light .text-\[\#4ade80\] { color: #a3be8c !important; }
+        html.light .border-\[\#4ade80\] { border-color: #a3be8c !important; }
+        html.light .bg-\[\#0d1526\] { background-color: #e5e9f0 !important; }
+
+        /* Smooth theme transition */
+        html { transition: background-color 0.5s ease, color 0.5s ease; }
+        body { font-family: 'Manrope', sans-serif; margin: 0; padding: 0;
+               transition: background-color 0.5s ease, color 0.5s ease; }
+
+        .serif-headline { font-family: 'Newsreader', serif; }
         .glass-morphism, .glass-panel {
             backdrop-filter: blur(12px) saturate(180%);
             -webkit-backdrop-filter: blur(12px) saturate(180%);
         }
+
+        /* Theme toggle */
+        .theme-toggle {
+            cursor: pointer; background: none; border: none; padding: 0.375rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .theme-toggle:hover { transform: scale(1.15); }
+        .theme-toggle:active { transform: scale(0.95); }
+
+        /* Hamburger button */
+        .hamburger-btn {
+            cursor: pointer; background: none; border: none; padding: 0.375rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Mobile sidebar overlay — between nav (z-50) and sidebar (z-49) */
+        .sidebar-overlay {
+            position: fixed; inset: 0; z-index: 48;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* Mobile sidebar slide-in — behind the nav bar */
+        .mobile-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 49 !important;
+        }
+        .mobile-sidebar.active { transform: translateX(0); }
+
+        /* ---- Sidebar scrollbar styling ---- */
+        .sidebar-bg, .mobile-sidebar { direction: rtl; }
+        .sidebar-bg > *, .mobile-sidebar > * { direction: ltr; }
+        .sidebar-bg::-webkit-scrollbar,
+        .mobile-sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar-bg::-webkit-scrollbar-track,
+        .mobile-sidebar::-webkit-scrollbar-track { background: transparent; }
+        html.dark .sidebar-bg::-webkit-scrollbar-thumb,
+        html.dark .mobile-sidebar::-webkit-scrollbar-thumb { background-color: rgba(76, 86, 106, 0.4); border-radius: 4px; }
+        html.dark .sidebar-bg::-webkit-scrollbar-thumb:hover,
+        html.dark .mobile-sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(76, 86, 106, 0.6); }
+        html.light .sidebar-bg::-webkit-scrollbar-thumb,
+        html.light .mobile-sidebar::-webkit-scrollbar-thumb { background-color: rgba(76, 86, 106, 0.2); border-radius: 4px; }
+        html.light .sidebar-bg::-webkit-scrollbar-thumb:hover,
+        html.light .mobile-sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(76, 86, 106, 0.35); }
+        .sidebar-bg, .mobile-sidebar { scrollbar-width: thin; }
+        html.dark .sidebar-bg, html.dark .mobile-sidebar { scrollbar-color: rgba(76, 86, 106, 0.4) transparent; }
+        html.light .sidebar-bg, html.light .mobile-sidebar { scrollbar-color: rgba(76, 86, 106, 0.2) transparent; }
     </style>
 </head>
-<body class="bg-background text-on-background antialiased overflow-x-hidden min-h-screen flex flex-col selection:bg-primary-container selection:text-primary">
+<body class="antialiased overflow-x-hidden min-h-screen flex flex-col">
+
+<!-- Mobile sidebar overlay -->
+<div id="sidebar-overlay" class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
 
 <!-- Universal TopNavBar -->
-<nav class="fixed top-0 w-full z-50 bg-[#171f33]/70 backdrop-blur-xl saturate-180 border-b border-[#dae2fd]/15 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
-    <div class="flex justify-between items-center w-full px-8 py-4 mx-auto max-w-screen-2xl">
-        <div class="flex items-center gap-8">
-            <a href="/" class="text-2xl font-serif italic text-[#fabd00] serif-headline no-underline hover:brightness-125 transition-all">Literary Lions Forum</a>
+<nav class="fixed top-0 w-full z-50 top-nav backdrop-blur-xl saturate-180 shadow-[0_20px_40px_rgba(0,0,0,0.05)]">
+    <div class="flex justify-between items-center w-full px-4 md:px-8 py-4">
+        <div class="flex items-center gap-3">
+            <button id="hamburger-btn" class="hamburger-btn lg:hidden" aria-label="Open menu" onclick="toggleMobileSidebar()">
+                <span class="material-symbols-outlined text-2xl">menu</span>
+            </button>
+            <a href="/" class="text-xl md:text-2xl font-serif italic serif-headline no-underline hover:brightness-125 transition-all brand-title">The Daily Inkwell</a>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 md:gap-4">
             {{if .IsAuthenticated}}
-                <a href="/post/create" class="px-5 py-2 text-sm font-bold text-tertiary border border-tertiary/50 rounded-md hover:bg-tertiary/10 transition-all no-underline">Create Post</a>
+                <a href="/post/create" class="px-3 md:px-5 py-2 text-sm font-bold text-tertiary border border-tertiary/50 hover:bg-tertiary/10 transition-all no-underline">Create Post</a>
                 <form action="/user/logout" method="POST" class="m-0 p-0">
-                    <button type="submit" class="px-5 py-2 text-sm font-bold text-[#f87171] hover:text-[#fca5a5] hover:bg-[#f87171]/10 rounded-md transition-all">Logout</button>
+                    <button type="submit" class="px-3 md:px-5 py-2 text-sm font-bold text-error hover:bg-error/10 transition-all">Logout</button>
                 </form>
             {{else}}
-                <a href="/user/login" class="px-5 py-2 text-sm font-bold text-[#dae2fd]/70 hover:text-[#dae2fd] transition-all no-underline">Login</a>
-                <a href="/user/signup" class="px-5 py-2 text-sm font-bold bg-primary text-on-primary rounded-md hover:opacity-90 transition-all active:scale-95 duration-200 no-underline shadow-lg hover:shadow-primary/20">Register</a>
+                <a href="/user/login" class="px-3 md:px-5 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface transition-all no-underline">Login</a>
+                <a href="/user/signup" class="px-3 md:px-5 py-2 text-sm font-bold bg-primary text-on-primary hover:opacity-90 transition-all active:scale-95 duration-200 no-underline shadow-lg">Register</a>
             {{end}}
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+                <span class="material-symbols-outlined theme-toggle-icon text-2xl" id="theme-icon">dark_mode</span>
+            </button>
         </div>
     </div>
 </nav>
 
-<!-- Inject specific page content here -->
 {{template "main" .}}
+
+<script>
+    (function() {
+        var toggleBtn = document.getElementById('theme-toggle');
+        var icon = document.getElementById('theme-icon');
+        function setTheme(theme) {
+            if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                icon.textContent = 'light_mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+                icon.textContent = 'dark_mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        var current = localStorage.getItem('theme') || 'dark';
+        setTheme(current);
+        toggleBtn.addEventListener('click', function() {
+            var isDark = document.documentElement.classList.contains('dark');
+            setTheme(isDark ? 'light' : 'dark');
+        });
+    })();
+
+    function toggleMobileSidebar() {
+        var sidebar = document.getElementById('mobile-sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        if (sidebar && overlay) { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); }
+    }
+    function closeMobileSidebar() {
+        var sidebar = document.getElementById('mobile-sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        if (sidebar && overlay) { sidebar.classList.remove('active'); overlay.classList.remove('active'); }
+    }
+</script>
 
 </body>
 </html>

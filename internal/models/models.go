@@ -397,6 +397,78 @@ func (m *AppModel) UpdateUserProfile(userID, aboutMe, profilePicture string) err
 	return err
 }
 
+// UpdateUserNameUsername updates a user's username.
+func (m *AppModel) UpdateUserNameUsername(userID, username string) error {
+	stmt := `UPDATE users SET username = ? WHERE id = ?`
+	_, err := m.DB.Exec(stmt, username, userID)
+	return err
+}
+
+// UpdateUserPassword updates a user's hashed password.
+func (m *AppModel) UpdateUserPassword(userID, newHashedPassword string) error {
+	stmt := `UPDATE users SET password = ? WHERE id = ?`
+	_, err := m.DB.Exec(stmt, newHashedPassword, userID)
+	return err
+}
+
+// GetUserHashedPassword retrieves the hashed password for a user.
+func (m *AppModel) GetUserHashedPassword(userID string) (string, error) {
+	var hashedPassword string
+	stmt := `SELECT password FROM users WHERE id = ?`
+	err := m.DB.QueryRow(stmt, userID).Scan(&hashedPassword)
+	if err != nil {
+		return "", err
+	}
+	return hashedPassword, nil
+}
+
+// DeleteUser permanently deletes a user and all their associated data.
+func (m *AppModel) DeleteUser(userID string) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete sessions
+	_, err = tx.Exec(`DELETE FROM sessions WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete votes by this user
+	_, err = tx.Exec(`DELETE FROM likes_dislikes WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete comments by this user
+	_, err = tx.Exec(`DELETE FROM comments WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete post categories for this user's posts
+	_, err = tx.Exec(`DELETE FROM post_categories WHERE post_id IN (SELECT id FROM posts WHERE user_id = ?)`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete posts by this user
+	_, err = tx.Exec(`DELETE FROM posts WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete the user
+	_, err = tx.Exec(`DELETE FROM users WHERE id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 // InsertOrUpdateVote registers a user's vote on a specific post or comment.
 func (m *AppModel) InsertOrUpdateVote(userID, targetID, targetType string, voteType int) error {
 	tx, err := m.DB.Begin()

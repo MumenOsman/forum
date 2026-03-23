@@ -3,8 +3,8 @@
 {{define "main"}}
 <div class="flex min-h-screen pt-20 w-full">
     <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
-        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-40 hidden lg:flex overflow-y-auto">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
@@ -16,7 +16,24 @@
                 <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
                 <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
             </div>
-        </div>
+        </a>
+    </aside>
+
+    <!-- Mobile Sidebar (slide-in, visible below lg) -->
+    <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all" onclick="closeMobileSidebar()">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
+            </div>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
+            </div>
+        </a>
     </aside>
 
     <!-- Main Content Canvas -->
@@ -26,11 +43,39 @@
             <p class="text-on-surface-variant font-body">Share your background and choose a visual representation for your scholarly identity.</p>
         </header>
 
+        {{if .ErrorMessage}}
+        <div class="px-6 py-4 rounded-lg bg-error/20 border-l-4 border-error text-error font-bold text-sm mb-8 flex items-center gap-3">
+            <span class="material-symbols-outlined">error</span>
+            {{.ErrorMessage}}
+        </div>
+        {{end}}
+
+        {{if .SuccessMessage}}
+        <div class="px-6 py-4 rounded-lg bg-[#1a3a2a] border-l-4 border-[#4ade80] text-[#4ade80] font-bold text-sm mb-8 flex items-center gap-3">
+            <span class="material-symbols-outlined">check_circle</span>
+            {{.SuccessMessage}}
+        </div>
+        {{end}}
+
         <form action="/user/profile/edit" method="POST" enctype="multipart/form-data" class="space-y-8 bg-surface-container/40 p-8 md:p-12 rounded-xl border border-outline-variant/15 backdrop-blur-md">
+            <!-- Username Section -->
+            <div class="space-y-4">
+                <label for="username" class="block text-sm font-bold text-primary uppercase tracking-widest">Username</label>
+                <input type="text" id="username" name="username" value="{{.User.Username}}" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-3 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Your display name..." required />
+                <p class="text-xs text-on-surface-variant/60 italic">This is your public display name on the forum.</p>
+            </div>
+
+            <!-- Email Section (read-only) -->
+            <div class="space-y-4">
+                <label for="email" class="block text-sm font-bold text-on-surface-variant/60 uppercase tracking-widest">Email</label>
+                <input type="email" id="email" value="{{.User.Email}}" class="w-full bg-[#0d1526] border border-outline-variant/10 rounded-md py-3 px-4 text-on-surface-variant/60 font-body cursor-not-allowed" disabled readonly />
+                <p class="text-xs text-on-surface-variant/40 italic">Email cannot be changed.</p>
+            </div>
+
             <!-- About Me Section -->
             <div class="space-y-4">
                 <label for="about_me" class="block text-sm font-bold text-primary uppercase tracking-widest">About the Archivist</label>
-                <textarea id="about_me" name="about_me" rows="5" class="w-full bg-[#171f33] border border-outline-variant/20 rounded-md py-4 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Describe your areas of interest, your literary background, or anything you'd like to share with the forum...">{{.User.AboutMe}}</textarea>
+                <textarea id="about_me" name="about_me" rows="5" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-4 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Describe your areas of interest, your literary background, or anything you'd like to share with the forum...">{{.User.AboutMe}}</textarea>
                 <p class="text-xs text-on-surface-variant/60 italic">This will be displayed on your public profile page.</p>
             </div>
 
@@ -58,6 +103,51 @@
                 <a href="/user/profile?id={{.User.ID}}" class="px-8 py-3 text-on-surface-variant font-bold hover:text-on-surface transition-colors no-underline">Cancel</a>
             </div>
         </form>
+
+        <!-- Password Change Section -->
+        <form action="/user/password/change" method="POST" class="mt-8 space-y-6 bg-surface-container/40 p-8 md:p-12 rounded-xl border border-outline-variant/15 backdrop-blur-md">
+            <div>
+                <h2 class="text-2xl font-headline font-bold text-on-surface mb-2">Change Password</h2>
+                <p class="text-on-surface-variant font-body text-sm">Update your account security credentials.</p>
+            </div>
+
+            <div class="space-y-4">
+                <label for="current_password" class="block text-sm font-bold text-primary uppercase tracking-widest">Current Password</label>
+                <input type="password" id="current_password" name="current_password" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-3 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Enter your current password..." required />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <label for="new_password" class="block text-sm font-bold text-primary uppercase tracking-widest">New Password</label>
+                    <input type="password" id="new_password" name="new_password" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-3 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Min. 6 characters..." required />
+                </div>
+                <div class="space-y-4">
+                    <label for="confirm_password" class="block text-sm font-bold text-primary uppercase tracking-widest">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-3 px-4 text-on-surface font-body focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/30" placeholder="Re-enter new password..." required />
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" class="px-8 py-3 bg-secondary-container text-on-secondary-container rounded-md font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg">Update Password</button>
+            </div>
+        </form>
+
+        <!-- Danger Zone -->
+        <div class="mt-8 p-8 md:p-12 rounded-xl border border-error/30 bg-error/5">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div>
+                    <h2 class="text-2xl font-headline font-bold text-[#fca5a5] mb-2">Danger Zone</h2>
+                    <p class="text-on-surface-variant font-body text-sm max-w-md">
+                        Deleting your account will permanently purge your manuscripts, bookmarks, and scholarly interactions. This action is irreversible.
+                    </p>
+                </div>
+                <form action="/user/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete your account? This cannot be undone.');">
+                    <button type="submit" class="px-8 py-3 border-2 border-error/50 text-error rounded-md font-bold uppercase tracking-wider hover:bg-error/20 active:scale-95 transition-all whitespace-nowrap">
+                        Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
     </main>
 </div>
 {{end}}

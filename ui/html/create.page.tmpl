@@ -3,8 +3,8 @@
 {{define "main"}}
 <div class="flex min-h-screen pt-20 w-full">
     <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
-        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-40 hidden lg:flex overflow-y-auto">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
@@ -16,12 +16,12 @@
                 <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
                 <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
             </div>
-        </div>
+        </a>
         
         <nav class="flex-1 space-y-1">
             <form action="/" method="GET" class="m-0">
                 {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span class="font-label">All Categories</span>
                 </button>
@@ -29,7 +29,7 @@
             {{range .Categories}}
             <form action="/" method="GET" class="m-0">
                 {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">auto_stories</span>
                     <span class="font-label">{{.Name}}</span>
                 </button>
@@ -39,7 +39,41 @@
         
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- Mobile Sidebar (slide-in, visible below lg) -->
+    <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all" onclick="closeMobileSidebar()">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
+            </div>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
+            </div>
+        </a>
+        
+        <nav class="flex-1 space-y-1">
+            <form action="/" method="GET" class="m-0">
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span class="font-label">All Categories</span>
+                </button>
+            </form>
+            {{range .Categories}}
+            <form action="/" method="GET" class="m-0">
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span class="font-label">{{.Name}}</span>
+                </button>
+            </form>
+            {{end}}
+        </nav>
+    </aside>
+
+    <!-- Main Content Canvas -->
     <main class="flex-1 lg:ml-64 p-6 md:p-12 max-w-5xl mx-auto w-full">
         <header class="mb-12">
             <p class="font-label text-tertiary text-xs tracking-[0.2em] uppercase mb-2">New Contribution</p>

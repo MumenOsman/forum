@@ -3,9 +3,9 @@
 {{define "main"}}
 <div class="flex min-h-screen pt-20 w-full">
     <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 bg-[#131b2e] border-r border-[#dae2fd]/10 z-40 hidden lg:flex overflow-y-auto">
+    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-40 hidden lg:flex overflow-y-auto">
         {{if .IsAuthenticated}}
-        <div class="flex items-center gap-3 px-3 py-6 mb-4">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
@@ -17,20 +17,20 @@
                 <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
                 <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
             </div>
-        </div>
+        </a>
         {{end}}
 
         <form action="/" method="GET" class="px-2 mb-4 mt-2">
             <div class="relative group">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors text-sm">search</span>
-                <input type="text" name="q" placeholder="Search archive..." value="{{.SearchQuery}}" class="w-full bg-[#171f33] border border-outline-variant/20 rounded-md py-2 pl-9 pr-3 text-sm text-on-surface font-label focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/40">
+                <input type="text" name="q" placeholder="Search archive..." value="{{.SearchQuery}}" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-2 pl-9 pr-3 text-sm text-on-surface font-label focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/40">
             </div>
         </form>
         
         <nav class="flex-1 space-y-1">
             <form action="/" method="GET" class="m-0">
                 {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 {{if and (not .FilterCategory) (not .FilterAuthored) (not .FilterLiked)}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 {{if and (not .FilterCategory) (not .FilterAuthored) (not .FilterLiked)}}text-[#88c0d0] bg-[#3b4252]{{else}}text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">menu_book</span>
                     <span class="font-label">All Categories</span>
                 </button>
@@ -39,14 +39,14 @@
             {{if .IsAuthenticated}}
             <form action="/" method="GET" class="m-0">
                 <input type="hidden" name="authored" value="true">
-                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterAuthored}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterAuthored}}text-[#88c0d0] bg-[#3b4252]{{else}}text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">person_pin</span>
                     <span class="font-label">My Posts</span>
                 </button>
             </form>
             <form action="/" method="GET" class="m-0">
                 <input type="hidden" name="liked" value="true">
-                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterLiked}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 {{if .FilterLiked}}text-[#88c0d0] bg-[#3b4252]{{else}}text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">favorite</span>
                     <span class="font-label">Liked Posts</span>
                 </button>
@@ -56,7 +56,7 @@
             {{range .Categories}}
             <form action="/" method="GET" class="m-0">
                 {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
-                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 {{if eq $.FilterCategory (printf "%d" .ID)}}text-[#fabd00] bg-[#171f33]{{else}}text-[#dae2fd]/60 hover:text-[#dae2fd] hover:bg-[#171f33]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 {{if eq $.FilterCategory (printf "%d" .ID)}}text-[#88c0d0] bg-[#3b4252]{{else}}text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252]{{end}} transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
                     <span class="material-symbols-outlined">auto_stories</span>
                     <span class="font-label">{{.Name}}</span>
                 </button>
@@ -64,6 +64,69 @@
             {{end}}
         </nav>
         
+    </aside>
+
+    <!-- Mobile Sidebar (slide-in, visible below lg) -->
+    <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
+        {{if .IsAuthenticated}}
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all" onclick="closeMobileSidebar()">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                {{if .AuthenticatedUser.ProfilePicture}}
+                    <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
+                {{else}}
+                    <span class="material-symbols-outlined text-tertiary">person</span>
+                {{end}}
+            </div>
+            <div>
+                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
+            </div>
+        </a>
+        {{end}}
+
+        <form action="/" method="GET" class="px-2 mb-4 mt-2">
+            <div class="relative group">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 group-focus-within:text-primary transition-colors text-sm">search</span>
+                <input type="text" name="q" placeholder="Search archive..." value="{{.SearchQuery}}" class="w-full bg-[#3b4252] border border-outline-variant/20 rounded-md py-2 pl-9 pr-3 text-sm text-on-surface font-label focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/40">
+            </div>
+        </form>
+        
+        <nav class="flex-1 space-y-1">
+            <form action="/" method="GET" class="m-0">
+                {{if .SearchQuery}}<input type="hidden" name="q" value="{{.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span class="font-label">All Categories</span>
+                </button>
+            </form>
+
+            {{if .IsAuthenticated}}
+            <form action="/" method="GET" class="m-0">
+                <input type="hidden" name="authored" value="true">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">person_pin</span>
+                    <span class="font-label">My Posts</span>
+                </button>
+            </form>
+            <form action="/" method="GET" class="m-0">
+                <input type="hidden" name="liked" value="true">
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">favorite</span>
+                    <span class="font-label">Liked Posts</span>
+                </button>
+            </form>
+            {{end}}
+
+            {{range .Categories}}
+            <form action="/" method="GET" class="m-0">
+                {{if $.SearchQuery}}<input type="hidden" name="q" value="{{$.SearchQuery}}">{{end}}
+                <button type="submit" name="category" value="{{.ID}}" class="w-full flex items-center gap-3 px-4 py-3 text-[#4c566a] hover:text-[#d8dee9] hover:bg-[#3b4252] transition-transform duration-200 hover:translate-x-1 rounded-md cursor-pointer border-none bg-transparent">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span class="font-label">{{.Name}}</span>
+                </button>
+            </form>
+            {{end}}
+        </nav>
     </aside>
 
     <!-- Main Content -->
@@ -158,7 +221,7 @@
                                     <span class="text-xs text-on-surface-variant/50 ml-3 font-label uppercase tracking-widest">{{.CreatedAt.Format "Jan 02, 2006"}}</span>
                                 </div>
                             </div>
-                            <p class="font-body text-on-surface-variant leading-relaxed mb-6 whitespace-pre-wrap">{{.Content}}</p>
+                            <p class="font-body text-[#d8dee9] leading-relaxed mb-6 whitespace-pre-wrap">{{.Content}}</p>
                             
                             <div class="flex items-center gap-6">
                                 <div class="flex items-center gap-4">
@@ -205,7 +268,7 @@
                 <form action="/comment/create" method="POST" class="space-y-6 relative z-10 m-0 border-none">
                     <input type="hidden" name="post_id" value="{{.Post.ID}}">
                     <div class="group">
-                        <textarea class="w-full bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-primary text-on-surface font-body text-lg placeholder:text-on-surface-variant/30 py-4 transition-all resize-y" name="content" placeholder="Contribute your thoughts to the collection..." rows="4" required></textarea>
+                        <textarea class="w-full bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-primary text-on-surface font-body text-lg placeholder:text-[#88c0d0]/60 py-4 transition-all resize-y" name="content" placeholder="Contribute your thoughts to the collection..." rows="4" required></textarea>
                     </div>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2 text-on-surface-variant/50">
@@ -225,7 +288,7 @@
                 <p class="font-headline text-lg text-on-surface">You must be formally recognized by the archives to contribute.</p>
                 <div class="mt-6 flex justify-center gap-4">
                     <a href="/user/login" class="px-6 py-2 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-md font-bold shadow-lg no-underline hover:brightness-110">Login</a>
-                    <a href="/user/signup" class="px-6 py-2 border border-outline-variant text-[#dae2fd] rounded-md font-bold shadow-lg shadow-black/20 no-underline hover:bg-surface-container-high">Register</a>
+                    <a href="/user/signup" class="px-6 py-2 border border-outline-variant text-[#d8dee9] rounded-md font-bold shadow-lg shadow-black/20 no-underline hover:bg-surface-container-high">Register</a>
                 </div>
             </div>
             {{end}}

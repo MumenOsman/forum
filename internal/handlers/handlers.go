@@ -39,6 +39,7 @@ type TemplateData struct {
 	AuthenticatedUser *models.User
 	User            *models.User
 	ErrorMessage    string
+	SuccessMessage  string
 	SearchQuery     string
 	Profile         *models.User
 	Comments        []*models.Comment
@@ -401,6 +402,13 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 	email := r.PostForm.Get("email")
 	password := r.PostForm.Get("password")
 
+	if len(password) < 6 {
+		app.render(w, http.StatusUnprocessableEntity, "signup.page.tmpl", &TemplateData{
+			ErrorMessage: "Password must be at least 6 characters.",
+		})
+		return
+	}
+
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
 		app.serverError(w, err)
@@ -637,6 +645,23 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Update username if provided
+		newUsername := r.PostFormValue("username")
+		if newUsername != "" && newUsername != user.Username {
+			err = app.Models.UpdateUserNameUsername(userID, newUsername)
+			if err != nil {
+				// Likely a duplicate username
+				user, _ = app.Models.GetUserByID(userID)
+				app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+					User:              user,
+					IsAuthenticated:   true,
+					AuthenticatedUser: user,
+					ErrorMessage:      "Username is already taken or invalid.",
+				})
+				return
+			}
+		}
+
 		aboutMe := r.PostFormValue("about_me")
 		profilePicture := user.ProfilePicture
 
@@ -675,4 +700,123 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Allow", "GET, POST")
 	app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+}
+
+// PasswordChange handles POST requests to change the user's password.
+func (app *Application) PasswordChange(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	currentPassword := r.PostForm.Get("current_password")
+	newPassword := r.PostForm.Get("new_password")
+	confirmPassword := r.PostForm.Get("confirm_password")
+
+	if currentPassword == "" || newPassword == "" || confirmPassword == "" {
+		app.renderProfileEditWithError(w, userID, "All password fields are required.")
+		return
+	}
+
+	if newPassword != confirmPassword {
+		app.renderProfileEditWithError(w, userID, "New passwords do not match.")
+		return
+	}
+
+	if len(newPassword) < 6 {
+		app.renderProfileEditWithError(w, userID, "New password must be at least 6 characters.")
+		return
+	}
+
+	// Verify current password
+	hashedPassword, err := app.Models.GetUserHashedPassword(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = auth.ComparePassword(hashedPassword, currentPassword)
+	if err != nil {
+		app.renderProfileEditWithError(w, userID, "Current password is incorrect.")
+		return
+	}
+
+	// Hash the new password
+	newHashedPassword, err := auth.HashPassword(newPassword)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = app.Models.UpdateUserPassword(userID, newHashedPassword)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Redirect back to profile edit with success
+	user, _ := app.Models.GetUserByID(userID)
+	app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+		User:              user,
+		IsAuthenticated:   true,
+		AuthenticatedUser: user,
+		SuccessMessage:    "Password changed successfully.",
+	})
+}
+
+// renderProfileEditWithError is a helper to re-render the profile edit page with an error.
+func (app *Application) renderProfileEditWithError(w http.ResponseWriter, userID, message string) {
+	user, _ := app.Models.GetUserByID(userID)
+	app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+		User:              user,
+		IsAuthenticated:   true,
+		AuthenticatedUser: user,
+		ErrorMessage:      message,
+	})
+}
+
+// AccountDelete handles POST requests to permanently delete the user's account.
+func (app *Application) AccountDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	// Delete the user account
+	err := app.Models.DeleteUser(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// Clear the session cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+	})
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

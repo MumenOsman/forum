@@ -1,153 +1,55 @@
+/* ===================================================
+   Nord Design System — The Daily Inkwell
+   ===================================================
+   Color Palette:
+   Polar Night: nord0 #2e3440, nord1 #3b4252, nord2 #434c5e, nord3 #4c566a
+   Snow Storm:  nord4 #d8dee9, nord5 #e5e9f0, nord6 #eceff4
+   Frost:       nord7 #8fbcbb, nord8 #88c0d0, nord9 #81a1c1, nord10 #5e81ac
+   Aurora:      nord11 #bf616a, nord12 #d08770, nord13 #ebcb8b, nord14 #a3be8c, nord15 #b48ead
+   =================================================== */
+
 :root {
-  --primary-color: #1a2a6c;
-  --secondary-color: #b21f1f;
-  --accent-color: #fdbb2d;
-  --bg-color: #f8f9fa;
-  --text-color: #333;
-  --card-bg: #fff;
-  --border-radius: 8px;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --header-height: 70px;
+    /* Polar Night */
+    --nord0: #2e3440;
+    --nord1: #3b4252;
+    --nord2: #434c5e;
+    --nord3: #4c566a;
+    /* Snow Storm */
+    --nord4: #d8dee9;
+    --nord5: #e5e9f0;
+    --nord6: #eceff4;
+    /* Frost */
+    --nord7: #8fbcbb;
+    --nord8: #88c0d0;
+    --nord9: #81a1c1;
+    --nord10: #5e81ac;
+    /* Aurora */
+    --nord11: #bf616a;
+    --nord12: #d08770;
+    --nord13: #ebcb8b;
+    --nord14: #a3be8c;
+    --nord15: #b48ead;
+
+    /* Semantic tokens — default to dark mode */
+    --bg: var(--nord0);
+    --bg-card: var(--nord1);
+    --bg-elevated: var(--nord2);
+    --text-primary: var(--nord4);
+    --text-secondary: var(--nord3);
+    --accent: var(--nord8);
+    --accent-hover: var(--nord9);
+    --error: var(--nord11);
+    --warning: var(--nord12);
+    --success: var(--nord14);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-header {
-  height: var(--header-height);
-  background: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: var(--shadow);
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  text-decoration: none;
-  color: white;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-nav ul {
-  display: flex;
-  list-style: none;
-  gap: 1.5rem;
-}
-
-nav a {
-  color: white;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s;
-}
-
-nav a:hover {
-  color: var(--accent-color);
-}
-
-main {
-  flex: 1;
-  max-width: 1200px;
-  width: 100%;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-footer {
-  text-align: center;
-  padding: 2rem;
-  background: #eee;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-/* Post Cards */
-.post-card {
-  background: var(--card-bg);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow);
-  transition: transform 0.2s;
-}
-
-.post-card:hover {
-  transform: translateY(-2px);
-}
-
-.post-title {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: var(--primary-color);
-}
-
-.post-meta {
-  font-size: 0.85rem;
-  color: #777;
-  margin-bottom: 1rem;
-}
-
-.post-content {
-  margin-bottom: 1rem;
-}
-
-.post-actions {
-  display: flex;
-  gap: 1rem;
-  border-top: 1px solid #eee;
-  padding-top: 1rem;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-
-.btn-secondary {
-  background: #eee;
-  color: var(--text-color);
-}
-
-.like-btn.active { color: #2ecc71; }
-.dislike-btn.active { color: #e74c3c; }
-
-/* Responsive */
-@media (max-width: 768px) {
-  header {
-    padding: 0 1rem;
-  }
-  nav ul {
-    gap: 0.75rem;
-  }
+/* Light mode overrides */
+html.light {
+    --bg: var(--nord6);
+    --bg-card: var(--nord5);
+    --bg-elevated: var(--nord4);
+    --text-primary: var(--nord0);
+    --text-secondary: var(--nord3);
+    --accent: var(--nord10);
+    --accent-hover: var(--nord9);
 }

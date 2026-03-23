@@ -47,9 +47,16 @@
                 <div class="group">
                     <label class="block font-label text-xs uppercase tracking-[0.15em] text-tertiary mb-2" for="password">Password</label>
                     <div class="relative">
-                        <input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="password" name="password" placeholder="••••••••" type="password" required />
+                        <input class="w-full bg-transparent border-0 border-b border-outline-variant py-3 px-0 text-on-surface font-body text-lg focus:ring-0 focus:border-primary transition-all placeholder:text-outline-variant/50" id="password" name="password" placeholder="At least 6 characters" type="password" required />
                         <div class="absolute bottom-0 left-0 h-0.5 w-0 bg-primary group-focus-within:w-full transition-all duration-300"></div>
                     </div>
+                    <p class="font-label text-[10px] text-on-surface-variant/50 mt-1 uppercase tracking-widest">Minimum 6 characters</p>
+                </div>
+
+                <!-- Inline password error (hidden by default) -->
+                <div id="pw-error" class="hidden rounded-xl border border-error/20 bg-error/10 p-4 flex items-start gap-3">
+                    <span class="material-symbols-outlined text-error mt-0.5">error</span>
+                    <p class="text-sm font-label font-medium text-error">Password must be at least 6 characters.</p>
                 </div>
 
                 <!-- Submit Button -->
@@ -58,6 +65,20 @@
                     <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
             </form>
+            <script>
+                document.querySelector('form[action="/user/signup"]').addEventListener('submit', function(e) {
+                    var pw = document.getElementById('password').value;
+                    var errEl = document.getElementById('pw-error');
+                    if (pw.length < 6) {
+                        e.preventDefault();
+                        errEl.classList.remove('hidden');
+                        document.getElementById('password').focus();
+                        errEl.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    } else {
+                        errEl.classList.add('hidden');
+                    }
+                });
+            </script>
 
             <!-- Footer Link -->
             <div class="mt-10 text-center">

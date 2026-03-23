@@ -23,6 +23,11 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
+// ComparePassword compares a hashed password with a plain-text password.
+func ComparePassword(hashedPassword, plainPassword string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+}
+
 // GenerateSessionID securely generates a v4 UUID.
 func GenerateSessionID() (string, error) {
 	u, err := uuid.NewV4()

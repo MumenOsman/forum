@@ -111,10 +111,65 @@ func InitSchema(db *sql.DB) error {
 	// Populate default categories if empty
 	initCategories(db)
 
+	// Seed demo data for new databases
+	SeedDemoData(db)
+
 	// Apply migrations for existing users who might lack the new columns
 	ApplyMigrations(db)
 
 	return nil
+}
+
+// SeedDemoData inserts a demo user and sample post on first run.
+// Uses INSERT OR IGNORE so existing data is never overwritten.
+func SeedDemoData(db *sql.DB) {
+	// Demo user — test@test.com / 123456
+	// Password hash is bcrypt of "123456"
+	const demoUserID = "demo-seed-user-001"
+	const demoPasswordHash = "$2a$10$ejeGRPm7B7DabU/Hist3nOt5TO8A34T/pJxNBsEY56IxCJ4rQAHBG"
+	_, err := db.Exec(`INSERT OR IGNORE INTO users (id, email, username, password, about_me)
+		VALUES (?, ?, ?, ?, ?)`,
+		demoUserID,
+		"test@test.com",
+		"Elara",
+		demoPasswordHash,
+		"A devoted reader and occasional scribbler of notes in book margins.",
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to seed demo user: %v\n", err)
+		return
+	}
+
+	// Demo post in Fiction category
+	const demoPostID = "demo-seed-post-001"
+	_, err = db.Exec(`INSERT OR IGNORE INTO posts (id, user_id, title, content, created_at)
+		VALUES (?, ?, ?, ?, ?)`,
+		demoPostID,
+		demoUserID,
+		"The Name of the Wind — A Reader's First Encounter",
+		`I picked up Patrick Rothfuss's "The Name of the Wind" on a whim after seeing it on a recommendation list, and I am genuinely struggling to put it down.
+
+The story follows Kvothe — a legendary figure whose name alone inspires both awe and fear — as he sits in a quiet inn and begins recounting his life to a scribe. What unfolds is a tale of a prodigiously gifted child who grows up among traveling performers, loses everything, and claws his way into a prestigious academy of magic.
+
+What strikes me most is the prose. Rothfuss writes with a rare kind of precision — every sentence feels deliberate, like it was weighed before being placed on the page. The magic system (called "Sympathy") is refreshingly grounded: it runs on physical laws, requires mental energy, and has real consequences when you get it wrong.
+
+The framing narrative of Kvothe sitting in his inn, older and quieter than the legend suggests, also adds a layer of melancholy that I didn't expect from a fantasy novel. You know things went wrong somewhere. The tension of waiting to find out how is quietly unbearable.
+
+If you enjoy fantasy that feels literary rather than purely adventurous, I'd strongly recommend giving this one a chapter or two. It earns every word.`,
+		"2026-03-01 10:00:00",
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to seed demo post: %v\n", err)
+		return
+	}
+
+	// Link post to Fiction category
+	var fictionID int
+	_ = db.QueryRow(`SELECT id FROM categories WHERE name = 'Fiction'`).Scan(&fictionID)
+	if fictionID > 0 {
+		_, _ = db.Exec(`INSERT OR IGNORE INTO post_categories (post_id, category_id) VALUES (?, ?)`,
+			demoPostID, fictionID)
+	}
 }
 
 // ApplyMigrations adds columns to existing tables if they don't exist.
@@ -130,7 +185,7 @@ func ApplyMigrations(db *sql.DB) {
 
 // initCategories is a helper to ensure at least some categories exist.
 func initCategories(db *sql.DB) {
-	categories := []string{"General", "Fiction", "Non-Fiction", "Sci-Fi", "Mystery", "Romance", "Historical Fiction", "Biography & Memoirs", "Fantasy"}
+	categories := []string{"General", "Fiction", "Non-Fiction", "Sci-Fi", "Mystery", "Romance", "Historical Fiction", "Biography", "Fantasy"}
 	for _, cat := range categories {
 		query := "INSERT OR IGNORE INTO categories (name) VALUES (?)"
 		_, err := db.Exec(query, cat)
