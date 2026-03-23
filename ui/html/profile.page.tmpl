@@ -64,7 +64,7 @@
                                 <span class="font-body text-sm uppercase tracking-widest font-semibold">Archivist since {{.User.CreatedAt}}</span>
                             </div>
                         </div>
-                        {{if .IsAuthenticated}}
+                        {{if and .IsAuthenticated (eq .User.ID .AuthenticatedUser.ID)}}
                             <!-- Only show Edit button if viewing own profile -->
                             <a href="/user/profile/edit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-secondary-container text-on-secondary-container rounded-md font-bold hover:brightness-110 transition-all no-underline shadow-lg border border-outline-variant/10">
                                 <span class="material-symbols-outlined text-lg">edit</span>
