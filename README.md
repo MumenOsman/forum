@@ -32,3 +32,16 @@ Once the image is built, start the container and map it to port 8080 using:
 docker run -p 8080:8080 forum-app
 ```
 The application will be accessible in your web browser at `http://localhost:8080`.
+
+## Demo Credentials & Personas
+The application is pre-seeded with 5 unique personas, each with their own interests and writing styles. All accounts use the password: `123456`.
+
+| Persona | Email | Specialty |
+| :--- | :--- | :--- |
+| **Elara** | `test@test.com` | Fantasy & Sci-Fi (The Worldbuilder) |
+| **Marcus** | `marcus@inkwell.com` | Historical Fiction & Biography (The Historian) |
+| **Chloe** | `chloe@inkwell.com` | Romance & Mystery (The Escapist) |
+| **Julian** | `julian@inkwell.com` | Non-Fiction & General (The Pragmatist) |
+| **Sarah** | `sarah@inkwell.com` | Fiction & Mystery (The Aspiring Author) |
+
+You can use any of these to test multi-user interactions and see how the different writing styles populate the "Daily Inkwell."
