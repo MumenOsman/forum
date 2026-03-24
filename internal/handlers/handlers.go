@@ -683,7 +683,15 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 
 			// Create a unique filename
 			fileName := fmt.Sprintf("%s_%s", userID, header.Filename)
-			filePath := filepath.Join("ui/static/uploads", fileName)
+			uploadDir := "ui/static/uploads"
+			filePath := filepath.Join(uploadDir, fileName)
+
+			// Ensure the upload directory exists
+			err = os.MkdirAll(uploadDir, 0755)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
 
 			dst, err := os.Create(filePath)
 			if err != nil {
