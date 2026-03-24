@@ -898,8 +898,12 @@ func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
 
 	unread, _ := app.Models.CountUnreadMessages(userID)
 
+	// Fetch all conversations for the sidebar
+	convos, _ := app.Models.GetConversations(userID)
+
 	app.render(w, http.StatusOK, "conversation.page.tmpl", &TemplateData{
 		Messages:          msgs,
+		Conversations:     convos,
 		OtherUser:         otherUser,
 		IsAuthenticated:   true,
 		AuthenticatedUser: app.getAuthenticatedUser(r),

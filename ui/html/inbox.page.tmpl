@@ -2,53 +2,95 @@
 
 {{define "main"}}
 <div class="flex min-h-screen pt-20 w-full">
-    <!-- SideNavBar Component -->
-    <aside class="h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-40 hidden lg:flex overflow-y-auto">
+    <!-- SideNavBar: Conversation Contacts -->
+    <aside class="h-full w-72 fixed left-0 top-0 pt-20 flex flex-col sidebar-bg z-40 hidden lg:flex overflow-y-auto">
         {{if .IsAuthenticated}}
-        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
-            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+        <!-- Profile link -->
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-4 py-5 mb-2 no-underline hover:bg-[#3b4252] transition-all border-b border-outline-variant/10">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
                 {{else}}
                     <span class="material-symbols-outlined text-tertiary">person</span>
                 {{end}}
             </div>
-            <div>
-                <p class="font-headline text-on-surface font-bold leading-none text-ellipsis overflow-hidden">{{.AuthenticatedUser.Username}}</p>
-                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Scholar Archivist</p>
+            <div class="min-w-0">
+                <p class="font-headline text-on-surface font-bold leading-none truncate">{{.AuthenticatedUser.Username}}</p>
+                <p class="font-label text-xs text-on-surface-variant mt-1 uppercase tracking-widest">Messages</p>
             </div>
         </a>
 
-        <!-- Navigation Links -->
-        <a href="/" class="flex items-center gap-3 px-3 py-2.5 no-underline hover:bg-[#3b4252] rounded-md transition-all text-on-surface-variant hover:text-on-surface">
-            <span class="material-symbols-outlined text-xl">home</span>
-            <span class="font-body text-sm font-semibold">Home</span>
-        </a>
-        <a href="/messages" class="flex items-center gap-3 px-3 py-2.5 no-underline bg-primary/10 rounded-md transition-all text-primary">
-            <span class="material-symbols-outlined text-xl">mail</span>
-            <span class="font-body text-sm font-semibold">Inbox</span>
-            {{if gt .UnreadCount 0}}
-            <span class="ml-auto px-2 py-0.5 text-xs font-bold bg-error text-white rounded-full">{{.UnreadCount}}</span>
+        <!-- Conversations list -->
+        <div class="flex-1 overflow-y-auto">
+            {{if .Conversations}}
+            {{range .Conversations}}
+            <a href="/messages/conversation?with={{.OtherUserID}}" class="flex items-center gap-3 px-4 py-3 no-underline hover:bg-[#3b4252] transition-all group">
+                <div class="w-9 h-9 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-lg text-on-surface-variant">person</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="font-body text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">{{.OtherUsername}}</span>
+                        <span class="font-label text-[10px] text-on-surface-variant flex-shrink-0">{{.LastMessageTime.Format "15:04"}}</span>
+                    </div>
+                    <p class="font-body text-xs text-on-surface-variant truncate mt-0.5">
+                        {{if .IsSenderOfLast}}<span class="text-primary">You:</span> {{end}}{{.LastMessage}}
+                    </p>
+                </div>
+                {{if gt .UnreadCount 0}}
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-on-primary text-[10px] font-bold flex items-center justify-center">{{.UnreadCount}}</span>
+                {{end}}
+            </a>
             {{end}}
+            {{else}}
+            <div class="px-4 py-8 text-center">
+                <span class="material-symbols-outlined text-2xl text-outline-variant/40 mb-2 block">forum</span>
+                <p class="font-body text-xs text-on-surface-variant/60">No conversations yet</p>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Back to Home link at bottom -->
+        <a href="/" class="flex items-center gap-3 px-4 py-3 no-underline hover:bg-[#3b4252] transition-all text-on-surface-variant hover:text-on-surface border-t border-outline-variant/10">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+            <span class="font-body text-xs font-semibold uppercase tracking-wider">Back to Forum</span>
         </a>
         {{end}}
     </aside>
 
     <!-- Mobile Sidebar -->
-    <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
+    <aside id="mobile-sidebar" class="mobile-sidebar h-full w-72 fixed left-0 top-0 pt-20 flex flex-col sidebar-bg z-50 lg:hidden overflow-y-auto">
         {{if .IsAuthenticated}}
-        <a href="/messages" class="flex items-center gap-3 px-3 py-2.5 no-underline bg-primary/10 rounded-md transition-all text-primary" onclick="closeMobileSidebar()">
-            <span class="material-symbols-outlined text-xl">mail</span>
-            <span class="font-body text-sm font-semibold">Inbox</span>
-            {{if gt .UnreadCount 0}}
-            <span class="ml-auto px-2 py-0.5 text-xs font-bold bg-error text-white rounded-full">{{.UnreadCount}}</span>
+        <div class="px-4 py-3 border-b border-outline-variant/10">
+            <p class="font-headline text-on-surface font-bold text-sm">Conversations</p>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            {{range .Conversations}}
+            <a href="/messages/conversation?with={{.OtherUserID}}" class="flex items-center gap-3 px-4 py-3 no-underline hover:bg-[#3b4252] transition-all" onclick="closeMobileSidebar()">
+                <div class="w-9 h-9 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-lg text-on-surface-variant">person</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <span class="font-body text-sm font-bold text-on-surface truncate">{{.OtherUsername}}</span>
+                    <p class="font-body text-xs text-on-surface-variant truncate mt-0.5">
+                        {{if .IsSenderOfLast}}<span class="text-primary">You:</span> {{end}}{{.LastMessage}}
+                    </p>
+                </div>
+                {{if gt .UnreadCount 0}}
+                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-on-primary text-[10px] font-bold flex items-center justify-center">{{.UnreadCount}}</span>
+                {{end}}
+            </a>
             {{end}}
+        </div>
+        <a href="/" class="flex items-center gap-3 px-4 py-3 no-underline hover:bg-[#3b4252] transition-all text-on-surface-variant border-t border-outline-variant/10" onclick="closeMobileSidebar()">
+            <span class="material-symbols-outlined text-lg">arrow_back</span>
+            <span class="font-body text-xs font-semibold uppercase tracking-wider">Back to Forum</span>
         </a>
         {{end}}
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 pt-8 pb-12 px-4 md:px-12 max-w-4xl mx-auto w-full">
+    <main class="flex-1 lg:ml-72 pt-8 pb-12 px-4 md:px-12 max-w-4xl mx-auto w-full">
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-4xl md:text-5xl font-headline font-bold text-on-surface tracking-tight">Inbox</h1>
             {{if gt .UnreadCount 0}}
@@ -67,11 +109,9 @@
 
             {{range .Conversations}}
             <a href="/messages/conversation?with={{.OtherUserID}}" class="flex items-center gap-4 p-5 rounded-xl bg-surface-container border border-outline-variant/10 hover:border-primary/20 transition-all duration-300 no-underline group {{if gt .UnreadCount 0}}border-l-4 border-l-primary{{end}}">
-                <!-- Avatar -->
                 <div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center flex-shrink-0">
                     <span class="material-symbols-outlined text-2xl text-on-surface-variant">person</span>
                 </div>
-                <!-- Content -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2 mb-1">
                         <span class="font-headline font-bold text-on-surface text-lg group-hover:text-primary transition-colors truncate">{{.OtherUsername}}</span>
