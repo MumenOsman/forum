@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -423,8 +424,14 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	err = app.Models.InsertUser(userID, email, username, hashedPassword)
 	if err != nil {
-		// Possibly email/username already taken
-		app.clientError(w, http.StatusInternalServerError, "Error saving user properties or user already exists")
+		// Check if this is a duplicate email/username (UNIQUE constraint violation)
+		if strings.Contains(err.Error(), "UNIQUE constraint") {
+			app.render(w, http.StatusConflict, "signup.page.tmpl", &TemplateData{
+				ErrorMessage: "An account with that email or username already exists.",
+			})
+			return
+		}
+		app.serverError(w, err)
 		return
 	}
 
