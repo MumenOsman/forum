@@ -48,6 +48,11 @@ type TemplateData struct {
 	FilterAuthored  bool
 	FilterLiked     bool
 	FilterCategory  string
+	// DM fields
+	Messages       []*models.Message
+	Conversations  []*models.ConversationPreview
+	OtherUser      *models.User
+	UnreadCount    int
 }
 
 // Application holds the application-wide dependencies for the handlers.
@@ -826,4 +831,120 @@ func (app *Application) AccountDelete(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// ============================================================
+// PRIVATE MESSAGING HANDLERS
+// ============================================================
+
+// Inbox displays all conversations for the authenticated user.
+func (app *Application) Inbox(w http.ResponseWriter, r *http.Request) {
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
+	convos, err := app.Models.GetConversations(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	unread, _ := app.Models.CountUnreadMessages(userID)
+
+	app.render(w, http.StatusOK, "inbox.page.tmpl", &TemplateData{
+		Conversations:     convos,
+		IsAuthenticated:   true,
+		AuthenticatedUser: app.getAuthenticatedUser(r),
+		UnreadCount:       unread,
+	})
+}
+
+// Conversation shows the message thread between the current user and another user.
+func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	otherUserID := r.URL.Query().Get("with")
+	if otherUserID == "" || otherUserID == userID {
+		http.Redirect(w, r, "/messages", http.StatusSeeOther)
+		return
+	}
+
+	// Verify the other user exists
+	otherUser, err := app.Models.GetUserByID(otherUserID)
+	if err != nil {
+		app.clientError(w, http.StatusNotFound, "User not found")
+		return
+	}
+
+	// Mark incoming messages from this user as read
+	_ = app.Models.MarkMessagesRead(otherUserID, userID)
+
+	msgs, err := app.Models.GetThread(userID, otherUserID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	unread, _ := app.Models.CountUnreadMessages(userID)
+
+	app.render(w, http.StatusOK, "conversation.page.tmpl", &TemplateData{
+		Messages:          msgs,
+		OtherUser:         otherUser,
+		IsAuthenticated:   true,
+		AuthenticatedUser: app.getAuthenticatedUser(r),
+		UnreadCount:       unread,
+	})
+}
+
+// SendMessage handles POST requests to send a direct message.
+func (app *Application) SendMessage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
+	userID := app.getAuthenticatedUserID(r)
+	if userID == "" {
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	receiverID := r.PostForm.Get("receiver_id")
+	content := strings.TrimSpace(r.PostForm.Get("content"))
+
+	if receiverID == "" || content == "" || receiverID == userID {
+		http.Redirect(w, r, "/messages", http.StatusSeeOther)
+		return
+	}
+
+	msgID, err := auth.GenerateSessionID()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = app.Models.InsertMessage(msgID, userID, receiverID, content)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/messages/conversation?with="+receiverID, http.StatusSeeOther)
 }

@@ -70,6 +70,12 @@
                                 <span class="material-symbols-outlined text-lg">edit</span>
                                 <span>Edit Profile</span>
                             </a>
+                        {{else if .IsAuthenticated}}
+                            <!-- Send Message button on other users' profiles -->
+                            <a href="/messages/conversation?with={{.User.ID}}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-md font-bold hover:opacity-90 transition-all no-underline shadow-lg">
+                                <span class="material-symbols-outlined text-lg">mail</span>
+                                <span>Send Message</span>
+                            </a>
                         {{end}}
                     </div>
                     

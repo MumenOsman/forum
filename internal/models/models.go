@@ -539,3 +539,134 @@ func incrementTarget(tx *sql.Tx, targetID, targetType string, voteType, incremen
 	stmt := `UPDATE ` + table + ` SET ` + column + ` = ` + column + ` + ? WHERE id = ?`
 	tx.Exec(stmt, increment, targetID)
 }
+
+// ============================================================
+// PRIVATE MESSAGING (DMs)
+// ============================================================
+
+// Message represents a private message between two users.
+type Message struct {
+	ID         string
+	SenderID   string
+	ReceiverID string
+	Content    string
+	IsRead     bool
+	CreatedAt  time.Time
+	// Populated by JOIN for display
+	SenderUsername   string
+	ReceiverUsername string
+}
+
+// ConversationPreview represents a summary line in the inbox.
+type ConversationPreview struct {
+	OtherUserID       string
+	OtherUsername      string
+	LastMessage        string
+	LastMessageTime    time.Time
+	UnreadCount        int
+	IsSenderOfLast     bool // true if the logged-in user sent the last msg
+}
+
+// InsertMessage stores a new direct message.
+func (m *AppModel) InsertMessage(id, senderID, receiverID, content string) error {
+	stmt := `INSERT INTO messages (id, sender_id, receiver_id, content) VALUES (?, ?, ?, ?)`
+	_, err := m.DB.Exec(stmt, id, senderID, receiverID, content)
+	return err
+}
+
+// GetConversations returns a list of conversation previews for a user's inbox.
+func (m *AppModel) GetConversations(userID string) ([]*ConversationPreview, error) {
+	stmt := `
+	SELECT
+		other_id,
+		u.username,
+		last_content,
+		last_time,
+		COALESCE(ur.unread, 0),
+		is_sender
+	FROM (
+		SELECT
+			CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS other_id,
+			content AS last_content,
+			created_at AS last_time,
+			CASE WHEN sender_id = ? THEN 1 ELSE 0 END AS is_sender,
+			ROW_NUMBER() OVER (
+				PARTITION BY
+					CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END
+				ORDER BY created_at DESC
+			) AS rn
+		FROM messages
+		WHERE sender_id = ? OR receiver_id = ?
+	) latest
+	JOIN users u ON u.id = latest.other_id
+	LEFT JOIN (
+		SELECT sender_id, COUNT(*) AS unread
+		FROM messages
+		WHERE receiver_id = ? AND is_read = 0
+		GROUP BY sender_id
+	) ur ON ur.sender_id = latest.other_id
+	WHERE rn = 1
+	ORDER BY last_time DESC`
+
+	rows, err := m.DB.Query(stmt, userID, userID, userID, userID, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var convos []*ConversationPreview
+	for rows.Next() {
+		var c ConversationPreview
+		err = rows.Scan(&c.OtherUserID, &c.OtherUsername, &c.LastMessage, &c.LastMessageTime, &c.UnreadCount, &c.IsSenderOfLast)
+		if err != nil {
+			return nil, err
+		}
+		convos = append(convos, &c)
+	}
+	return convos, rows.Err()
+}
+
+// GetThread returns all messages between two users, oldest first.
+func (m *AppModel) GetThread(userID, otherUserID string) ([]*Message, error) {
+	stmt := `
+	SELECT m.id, m.sender_id, m.receiver_id, m.content, m.is_read, m.created_at,
+	       s.username, r.username
+	FROM messages m
+	JOIN users s ON s.id = m.sender_id
+	JOIN users r ON r.id = m.receiver_id
+	WHERE (m.sender_id = ? AND m.receiver_id = ?)
+	   OR (m.sender_id = ? AND m.receiver_id = ?)
+	ORDER BY m.created_at ASC`
+
+	rows, err := m.DB.Query(stmt, userID, otherUserID, otherUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var msgs []*Message
+	for rows.Next() {
+		var msg Message
+		err = rows.Scan(&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.IsRead, &msg.CreatedAt,
+			&msg.SenderUsername, &msg.ReceiverUsername)
+		if err != nil {
+			return nil, err
+		}
+		msgs = append(msgs, &msg)
+	}
+	return msgs, rows.Err()
+}
+
+// MarkMessagesRead marks all messages from a sender to a receiver as read.
+func (m *AppModel) MarkMessagesRead(senderID, receiverID string) error {
+	stmt := `UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0`
+	_, err := m.DB.Exec(stmt, senderID, receiverID)
+	return err
+}
+
+// CountUnreadMessages returns the total unread message count for a user.
+func (m *AppModel) CountUnreadMessages(userID string) (int, error) {
+	var count int
+	err := m.DB.QueryRow(`SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0`, userID).Scan(&count)
+	return count, err
+}

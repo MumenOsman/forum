@@ -102,6 +102,17 @@ func InitSchema(db *sql.DB) error {
 		UNIQUE(user_id, target_id, target_type),
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);
+
+	CREATE TABLE IF NOT EXISTS messages (
+		id TEXT PRIMARY KEY,
+		sender_id TEXT NOT NULL,
+		receiver_id TEXT NOT NULL,
+		content TEXT NOT NULL,
+		is_read INTEGER DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+	);
 	`
 	_, err := db.Exec(schema)
 	if err != nil {
