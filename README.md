@@ -32,7 +32,7 @@ This is a project that was developed as part of the Kood/Sisu learning path. The
 - **Alpine Linux**: Minimalist base image for the final production container.
 - **Git**: Version-controlled development with mirroring between Gitea and GitHub.
 
-## 🚀 How to Clone and Run
+## How to Clone and Run
 
 ### 1. Prerequisites
 - **Docker**: The application is fully containerized. No local Go or SQLite installation is required.
@@ -51,7 +51,7 @@ docker run -p 8080:8080 forum-app
 ```
 The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**
 
-## 👤 Demo Personas
+## Demo Personas
 
 The application is pre-seeded with 5 unique personas to showcase multi-user interactions. All accounts use the default password: `123456`.
 
@@ -63,5 +63,3 @@ The application is pre-seeded with 5 unique personas to showcase multi-user inte
 | **Julian** | `julian@inkwell.com` | Non-Fiction & General (The Pragmatist) |
 | **Sarah** | `sarah@inkwell.com` | Fiction & Mystery (The Aspiring Author) |
 
----
-*Developed by Mumen Osman for the Kood/Sisu curriculum.*
