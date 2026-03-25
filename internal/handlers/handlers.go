@@ -53,6 +53,7 @@ type TemplateData struct {
 	Conversations  []*models.ConversationPreview
 	OtherUser      *models.User
 	UnreadCount    int
+	Theme          string
 }
 
 // Application holds the application-wide dependencies for the handlers.
@@ -62,29 +63,29 @@ type Application struct {
 }
 
 // serverError sends a generic 500 error to the user gracefully.
-func (app *Application) serverError(w http.ResponseWriter, err error) {
+func (app *Application) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	log.Printf("Server Error: %v", err)
-	app.render(w, http.StatusInternalServerError, "error.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusInternalServerError, "error.page.tmpl", &TemplateData{
 		ErrorMessage: "Internal Server Error. We are looking into it.",
 		ErrorCode:    http.StatusInternalServerError,
 	})
 }
 
 // clientError sends an error message and status code to the user gracefully.
-func (app *Application) clientError(w http.ResponseWriter, status int, message string) {
-	app.render(w, status, "error.page.tmpl", &TemplateData{
+func (app *Application) clientError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	app.render(w, r, status, "error.page.tmpl", &TemplateData{
 		ErrorMessage: message,
 		ErrorCode:    status,
 	})
 }
 
 // notFound sends a 404 error gracefully
-func (app *Application) notFound(w http.ResponseWriter) {
-	app.clientError(w, http.StatusNotFound, "The requested resource could not be found.")
+func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
+	app.clientError(w, r, http.StatusNotFound, "The requested resource could not be found.")
 }
 
 // Render is a helper to render HTML templates.
-func (app *Application) render(w http.ResponseWriter, status int, page string, data *TemplateData) {
+func (app *Application) render(w http.ResponseWriter, r *http.Request, status int, page string, data *TemplateData) {
 	ts, ok := app.TemplateCache[page]
 	if !ok {
 		http.Error(w, fmt.Sprintf("The template %s does not exist", page), http.StatusInternalServerError)
@@ -96,6 +97,15 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, d
 	}
 	data.CurrentYear = time.Now().Year()
 
+	// Theme management (Server-side)
+	theme := "dark" // default
+	if r != nil {
+		if cookie, err := r.Cookie("theme"); err == nil {
+			theme = cookie.Value
+		}
+	}
+	data.Theme = theme
+
 	buf := new(bytes.Buffer)
 
 	err := ts.ExecuteTemplate(buf, "base", data)
@@ -105,12 +115,45 @@ func (app *Application) render(w http.ResponseWriter, status int, page string, d
 			http.Error(w, "Critical Error: Cannot render error page.", http.StatusInternalServerError)
 			return
 		}
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	w.WriteHeader(status)
 	buf.WriteTo(w)
+}
+
+// ThemeToggle handles POST requests to switch between light and dark themes.
+func (app *Application) ThemeToggle(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
+		return
+	}
+
+	currentTheme := "dark"
+	if cookie, err := r.Cookie("theme"); err == nil {
+		currentTheme = cookie.Value
+	}
+
+	newTheme := "light"
+	if currentTheme == "light" {
+		newTheme = "dark"
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "theme",
+		Value:    newTheme,
+		Path:     "/",
+		Expires:  time.Now().Add(365 * 24 * time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	referer := r.Header.Get("Referer")
+	if referer == "" {
+		referer = "/"
+	}
+	http.Redirect(w, r, referer, http.StatusSeeOther)
 }
 
 // NewTemplateCache creates a cache of parsed templates.
@@ -178,13 +221,13 @@ func (app *Application) getAuthenticatedUser(r *http.Request) *models.User {
 // Home handles requests to the root URL ("/").
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	}
 
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -213,17 +256,17 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := app.Models.GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	categories, err := app.Models.GetAllCategories()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
-	app.render(w, http.StatusOK, "home.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "home.page.tmpl", &TemplateData{
 		Posts:             posts,
 		Categories:        categories,
 		IsAuthenticated:   userID != "",
@@ -239,29 +282,29 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 func (app *Application) PostView(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	}
 
 	post, err := app.Models.GetPostByID(idStr)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
+			app.notFound(w, r)
 		} else {
-			app.serverError(w, err)
+			app.serverError(w, r, err)
 		}
 		return
 	}
 
 	userID := app.getAuthenticatedUserID(r)
 	categories, _ := app.Models.GetAllCategories()
-	app.render(w, http.StatusOK, "view.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "view.page.tmpl", &TemplateData{
 		Post:              post,
 		Comments:          post.Comments,
 		Categories:        categories,
@@ -281,11 +324,11 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		categories, err := app.Models.GetAllCategories()
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(w, r, err)
 			return
 		}
 
-		app.render(w, http.StatusOK, "create.page.tmpl", &TemplateData{
+		app.render(w, r, http.StatusOK, "create.page.tmpl", &TemplateData{
 			Categories:        categories,
 			IsAuthenticated:   true,
 			AuthenticatedUser: app.getAuthenticatedUser(r),
@@ -295,13 +338,13 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -316,19 +359,19 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if title == "" || content == "" || len(categories) == 0 {
-		app.clientError(w, http.StatusBadRequest, "Bad request: title, content, and at least 1 category required")
+		app.clientError(w, r, http.StatusBadRequest, "Bad request: title, content, and at least 1 category required")
 		return
 	}
 
 	postID, err := auth.GenerateSessionID() // secure UUID for post ID
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	err = app.Models.InsertPost(postID, userID, title, content, categories)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -339,7 +382,7 @@ func (app *Application) PostCreate(w http.ResponseWriter, r *http.Request) {
 func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -351,7 +394,7 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -359,13 +402,13 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 	content := r.PostForm.Get("content")
 
 	if postID == "" || content == "" {
-		app.clientError(w, http.StatusBadRequest, "Bad request: post_id and content required")
+		app.clientError(w, r, http.StatusBadRequest, "Bad request: post_id and content required")
 		return
 	}
 
 	commentID, err := app.Models.InsertComment(postID, userID, content)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -388,28 +431,35 @@ func (app *Application) CommentCreate(w http.ResponseWriter, r *http.Request) {
 // UserSignup handles requests to the user signup page ("/user/signup").
 func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		app.render(w, http.StatusOK, "signup.page.tmpl", nil)
+		app.render(w, r, http.StatusOK, "signup.page.tmpl", nil)
 		return
 	}
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
-	username := r.PostForm.Get("username")
 	email := r.PostForm.Get("email")
+	username := r.PostForm.Get("username")
 	password := r.PostForm.Get("password")
 
+	if email == "" || username == "" {
+		app.render(w, r, http.StatusUnprocessableEntity, "signup.page.tmpl", &TemplateData{
+			ErrorMessage: "Email and username are required.",
+		})
+		return
+	}
+
 	if len(password) < 6 {
-		app.render(w, http.StatusUnprocessableEntity, "signup.page.tmpl", &TemplateData{
+		app.render(w, r, http.StatusUnprocessableEntity, "signup.page.tmpl", &TemplateData{
 			ErrorMessage: "Password must be at least 6 characters.",
 		})
 		return
@@ -417,13 +467,13 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	userID, err := auth.GenerateSessionID() // Reusing to generate a UUID for the user ID
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -431,12 +481,12 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Check if this is a duplicate email/username (UNIQUE constraint violation)
 		if strings.Contains(err.Error(), "UNIQUE constraint") {
-			app.render(w, http.StatusConflict, "signup.page.tmpl", &TemplateData{
+			app.render(w, r, http.StatusConflict, "signup.page.tmpl", &TemplateData{
 				ErrorMessage: "An account with that email or username already exists.",
 			})
 			return
 		}
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -446,19 +496,19 @@ func (app *Application) UserSignup(w http.ResponseWriter, r *http.Request) {
 // UserLogin handles requests to the user login page ("/user/login").
 func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		app.render(w, http.StatusOK, "login.page.tmpl", nil)
+		app.render(w, r, http.StatusOK, "login.page.tmpl", nil)
 		return
 	}
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "GET, POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -468,25 +518,25 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 	userID, err := app.Models.Authenticate(email, password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			app.render(w, http.StatusUnauthorized, "login.page.tmpl", &TemplateData{
+			app.render(w, r, http.StatusUnauthorized, "login.page.tmpl", &TemplateData{
 				ErrorMessage: "Invalid email or password",
 			})
 		} else {
-			app.serverError(w, err)
+			app.serverError(w, r, err)
 		}
 		return
 	}
 
 	sessionID, err := auth.GenerateSessionID()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 	err = app.Models.InsertSession(sessionID, userID, expiresAt)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -505,7 +555,7 @@ func (app *Application) UserLogin(w http.ResponseWriter, r *http.Request) {
 func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -529,7 +579,7 @@ func (app *Application) UserLogout(w http.ResponseWriter, r *http.Request) {
 func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -541,7 +591,7 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -550,19 +600,19 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 	voteTypeStr := r.PostForm.Get("vote_type")
 
 	if targetID == "" || (targetType != "post" && targetType != "comment") || (voteTypeStr != "1" && voteTypeStr != "-1") {
-		app.clientError(w, http.StatusBadRequest, "Bad Request: invalid vote parameters")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request: invalid vote parameters")
 		return
 	}
 
 	voteType, err := strconv.Atoi(voteTypeStr)
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
 	err = app.Models.InsertOrUpdateVote(userID, targetID, targetType, voteType)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -592,33 +642,33 @@ func (app *Application) VoteHandler(w http.ResponseWriter, r *http.Request) {
 func (app *Application) UserProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	idStr := r.URL.Query().Get("id")
 	if idStr == "" {
-		app.notFound(w)
+		app.notFound(w, r)
 		return
 	}
 
 	user, err := app.Models.GetUserByID(idStr)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
+			app.notFound(w, r)
 		} else {
-			app.serverError(w, err)
+			app.serverError(w, r, err)
 		}
 		return
 	}
 
 	posts, err := app.Models.GetFilteredPosts("", idStr, "", "")
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
-	app.render(w, http.StatusOK, "profile.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "profile.page.tmpl", &TemplateData{
 		User:              user,
 		Posts:             posts,
 		IsAuthenticated:   app.getAuthenticatedUserID(r) != "",
@@ -636,12 +686,12 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 
 	user, err := app.Models.GetUserByID(userID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	if r.Method == http.MethodGet {
-		app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+		app.render(w, r, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
 			User:              user,
 			IsAuthenticated:   true,
 			AuthenticatedUser: user,
@@ -653,7 +703,7 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 		// Limit the size of the uploaded file to 2MB
 		err := r.ParseMultipartForm(2 << 20)
 		if err != nil {
-			app.clientError(w, http.StatusBadRequest, "File too large")
+			app.clientError(w, r, http.StatusBadRequest, "File too large")
 			return
 		}
 
@@ -664,7 +714,7 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// Likely a duplicate username
 				user, _ = app.Models.GetUserByID(userID)
-				app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+				app.render(w, r, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
 					User:              user,
 					IsAuthenticated:   true,
 					AuthenticatedUser: user,
@@ -689,19 +739,19 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 			// Ensure the upload directory exists
 			err = os.MkdirAll(uploadDir, 0755)
 			if err != nil {
-				app.serverError(w, err)
+				app.serverError(w, r, err)
 				return
 			}
 
 			dst, err := os.Create(filePath)
 			if err != nil {
-				app.serverError(w, err)
+				app.serverError(w, r, err)
 				return
 			}
 			defer dst.Close()
 
 			if _, err := io.Copy(dst, file); err != nil {
-				app.serverError(w, err)
+				app.serverError(w, r, err)
 				return
 			}
 
@@ -710,7 +760,7 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 
 		err = app.Models.UpdateUserProfile(userID, aboutMe, profilePicture)
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(w, r, err)
 			return
 		}
 
@@ -719,14 +769,14 @@ func (app *Application) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Allow", "GET, POST")
-	app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+	app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 }
 
 // PasswordChange handles POST requests to change the user's password.
 func (app *Application) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -738,7 +788,7 @@ func (app *Application) PasswordChange(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -747,49 +797,49 @@ func (app *Application) PasswordChange(w http.ResponseWriter, r *http.Request) {
 	confirmPassword := r.PostForm.Get("confirm_password")
 
 	if currentPassword == "" || newPassword == "" || confirmPassword == "" {
-		app.renderProfileEditWithError(w, userID, "All password fields are required.")
+		app.renderProfileEditWithError(w, r, userID, "All password fields are required.")
 		return
 	}
 
 	if newPassword != confirmPassword {
-		app.renderProfileEditWithError(w, userID, "New passwords do not match.")
+		app.renderProfileEditWithError(w, r, userID, "New passwords do not match.")
 		return
 	}
 
 	if len(newPassword) < 6 {
-		app.renderProfileEditWithError(w, userID, "New password must be at least 6 characters.")
+		app.renderProfileEditWithError(w, r, userID, "New password must be at least 6 characters.")
 		return
 	}
 
 	// Verify current password
 	hashedPassword, err := app.Models.GetUserHashedPassword(userID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	err = auth.ComparePassword(hashedPassword, currentPassword)
 	if err != nil {
-		app.renderProfileEditWithError(w, userID, "Current password is incorrect.")
+		app.renderProfileEditWithError(w, r, userID, "Current password is incorrect.")
 		return
 	}
 
 	// Hash the new password
 	newHashedPassword, err := auth.HashPassword(newPassword)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	err = app.Models.UpdateUserPassword(userID, newHashedPassword)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	// Redirect back to profile edit with success
 	user, _ := app.Models.GetUserByID(userID)
-	app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
 		User:              user,
 		IsAuthenticated:   true,
 		AuthenticatedUser: user,
@@ -798,9 +848,9 @@ func (app *Application) PasswordChange(w http.ResponseWriter, r *http.Request) {
 }
 
 // renderProfileEditWithError is a helper to re-render the profile edit page with an error.
-func (app *Application) renderProfileEditWithError(w http.ResponseWriter, userID, message string) {
+func (app *Application) renderProfileEditWithError(w http.ResponseWriter, r *http.Request, userID, message string) {
 	user, _ := app.Models.GetUserByID(userID)
-	app.render(w, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "profile_edit.page.tmpl", &TemplateData{
 		User:              user,
 		IsAuthenticated:   true,
 		AuthenticatedUser: user,
@@ -812,7 +862,7 @@ func (app *Application) renderProfileEditWithError(w http.ResponseWriter, userID
 func (app *Application) AccountDelete(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -825,7 +875,7 @@ func (app *Application) AccountDelete(w http.ResponseWriter, r *http.Request) {
 	// Delete the user account
 	err := app.Models.DeleteUser(userID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -854,19 +904,19 @@ func (app *Application) Inbox(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method != http.MethodGet {
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
 	convos, err := app.Models.GetConversations(userID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	unread, _ := app.Models.CountUnreadMessages(userID)
 
-	app.render(w, http.StatusOK, "inbox.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "inbox.page.tmpl", &TemplateData{
 		Conversations:     convos,
 		IsAuthenticated:   true,
 		AuthenticatedUser: app.getAuthenticatedUser(r),
@@ -891,7 +941,7 @@ func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
 	// Verify the other user exists
 	otherUser, err := app.Models.GetUserByID(otherUserID)
 	if err != nil {
-		app.clientError(w, http.StatusNotFound, "User not found")
+		app.clientError(w, r, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -900,7 +950,7 @@ func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
 
 	msgs, err := app.Models.GetThread(userID, otherUserID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -909,7 +959,7 @@ func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
 	// Fetch all conversations for the sidebar
 	convos, _ := app.Models.GetConversations(userID)
 
-	app.render(w, http.StatusOK, "conversation.page.tmpl", &TemplateData{
+	app.render(w, r, http.StatusOK, "conversation.page.tmpl", &TemplateData{
 		Messages:          msgs,
 		Conversations:     convos,
 		OtherUser:         otherUser,
@@ -922,7 +972,7 @@ func (app *Application) Conversation(w http.ResponseWriter, r *http.Request) {
 // SendMessage handles POST requests to send a direct message.
 func (app *Application) SendMessage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		app.clientError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
+		app.clientError(w, r, http.StatusMethodNotAllowed, "Method Not Allowed")
 		return
 	}
 
@@ -934,7 +984,7 @@ func (app *Application) SendMessage(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest, "Bad Request")
+		app.clientError(w, r, http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -948,13 +998,13 @@ func (app *Application) SendMessage(w http.ResponseWriter, r *http.Request) {
 
 	msgID, err := auth.GenerateSessionID()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 
 	err = app.Models.InsertMessage(msgID, userID, receiverID, content)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(w, r, err)
 		return
 	}
 

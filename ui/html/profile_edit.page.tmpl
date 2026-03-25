@@ -21,7 +21,7 @@
 
     <!-- Mobile Sidebar (slide-in, visible below lg) -->
     <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
-        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all" onclick="closeMobileSidebar()">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">

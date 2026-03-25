@@ -69,7 +69,7 @@
     <!-- Mobile Sidebar (slide-in, visible below lg) -->
     <aside id="mobile-sidebar" class="mobile-sidebar h-full w-64 fixed left-0 top-0 pt-20 flex flex-col p-4 space-y-2 sidebar-bg z-50 lg:hidden overflow-y-auto">
         {{if .IsAuthenticated}}
-        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all" onclick="closeMobileSidebar()">
+        <a href="/user/profile?id={{.AuthenticatedUser.ID}}" class="flex items-center gap-3 px-3 py-6 mb-4 no-underline hover:bg-[#3b4252] rounded-md transition-all">
             <div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
                 {{if .AuthenticatedUser.ProfilePicture}}
                     <img src="{{.AuthenticatedUser.ProfilePicture}}" alt="{{.AuthenticatedUser.Username}}" class="w-full h-full object-cover">
@@ -145,7 +145,11 @@
                 <div class="flex flex-wrap items-center justify-between gap-6 border-y border-white/10 py-6">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-xl border border-primary/20 bg-surface-container-high flex items-center justify-center overflow-hidden">
-                            <span class="material-symbols-outlined text-primary text-2xl">person</span>
+                            {{if .Post.ProfilePicture}}
+                                <img src="{{.Post.ProfilePicture}}" alt="{{.Post.Username}}" class="w-full h-full object-cover">
+                            {{else}}
+                                <span class="material-symbols-outlined text-primary text-2xl">person</span>
+                            {{end}}
                         </div>
                         <div>
                             <a href="/user/profile?id={{.Post.UserID}}" class="no-underline text-on-surface hover:text-primary transition-colors">
@@ -208,8 +212,12 @@
                 {{range .Comments}}
                 <div class="p-8 bg-surface-container-low transition-colors hover:bg-surface-container border-l-2 {{if eq .UserID $.Post.UserID}}border-tertiary{{else}}border-transparent{{end}}">
                     <div class="flex gap-6">
-                        <div class="w-10 h-10 rounded-lg bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary font-bold">
-                            <span class="material-symbols-outlined text-sm">person</span>
+                        <div class="w-10 h-10 rounded-lg bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary font-bold overflow-hidden">
+                            {{if .ProfilePicture}}
+                                <img src="{{.ProfilePicture}}" alt="{{.Username}}" class="w-full h-full object-cover">
+                            {{else}}
+                                <span class="material-symbols-outlined text-sm">person</span>
+                            {{end}}
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center justify-between mb-4">

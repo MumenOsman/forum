@@ -43,6 +43,7 @@ type Post struct {
 	ID           string
 	UserID       string
 	Username     string // For easier display
+	ProfilePicture string // FOR AVATAR DISPLAY
 	Title        string
 	Content      string
 	Likes        int
@@ -61,6 +62,7 @@ type Comment struct {
 	PostID    string
 	UserID    string
 	Username  string // For easier display
+	ProfilePicture string // FOR AVATAR DISPLAY
 	Content   string
 	Likes     int
 	Dislikes  int
@@ -118,7 +120,7 @@ func (m *AppModel) InsertPost(postID, userID, title, content string, categoryIDs
 // GetFilteredPosts retrieves posts based on optional filters.
 func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery string) ([]*Post, error) {
 	stmt := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes, p.created_at,
+		SELECT p.id, p.user_id, u.username, u.profile_picture, p.title, p.content, p.likes, p.dislikes, p.created_at,
 		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count
 		FROM posts p
 		JOIN users u ON p.user_id = u.id`
@@ -174,7 +176,7 @@ func (m *AppModel) GetFilteredPosts(categoryID, authoredBy, likedBy, searchQuery
 	var posts []*Post
 	for rows.Next() {
 		var p Post
-		err = rows.Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CreatedAt, &p.CommentCount)
+		err = rows.Scan(&p.ID, &p.UserID, &p.Username, &p.ProfilePicture, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CreatedAt, &p.CommentCount)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +216,7 @@ func (m *AppModel) GetAllCategories() ([]*Category, error) {
 // GetPostByID retrieves a specific post and its associated comments.
 func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 	stmt := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.likes, p.dislikes,
+		SELECT p.id, p.user_id, u.username, u.profile_picture, p.title, p.content, p.likes, p.dislikes,
 		       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
 		       p.created_at
 		FROM posts p
@@ -222,7 +224,7 @@ func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 		WHERE p.id = ?`
 
 	var p Post
-	err := m.DB.QueryRow(stmt, postID).Scan(&p.ID, &p.UserID, &p.Username, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CommentCount, &p.CreatedAt)
+	err := m.DB.QueryRow(stmt, postID).Scan(&p.ID, &p.UserID, &p.Username, &p.ProfilePicture, &p.Title, &p.Content, &p.Likes, &p.Dislikes, &p.CommentCount, &p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -232,7 +234,7 @@ func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 
 	// Fetch comments
 	cStmt := `
-		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.likes, c.dislikes, c.created_at
+		SELECT c.id, c.post_id, c.user_id, u.username, u.profile_picture, c.content, c.likes, c.dislikes, c.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
@@ -246,7 +248,7 @@ func (m *AppModel) GetPostByID(postID string) (*Post, error) {
 
 	for rows.Next() {
 		var c Comment
-		err = rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
+		err = rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.ProfilePicture, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -276,13 +278,13 @@ func (m *AppModel) InsertComment(postID, userID, content string) (string, error)
 // GetCommentByID retrieves a single comment by its ID.
 func (m *AppModel) GetCommentByID(id string) (*Comment, error) {
 	stmt := `
-		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.likes, c.dislikes, c.created_at
+		SELECT c.id, c.post_id, c.user_id, u.username, u.profile_picture, c.content, c.likes, c.dislikes, c.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.id = ?`
 
 	var c Comment
-	err := m.DB.QueryRow(stmt, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
+	err := m.DB.QueryRow(stmt, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Username, &c.ProfilePicture, &c.Content, &c.Likes, &c.Dislikes, &c.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord

@@ -1,40 +1,59 @@
-# Literary Lions Forum
+# The Daily Inkwell
 
-A digital forum for the "Literary Lions" book club to discuss books, share insights, and organize categories.
+This is a project that was developed as part of the Kood/Sisu learning path. The project is a website, a digital platform designed for avid readers o discuss books, share insights, and engage in meaningful conversations. 
+## Features
 
-## Features (Planned)
-- User registration and authentication.
-- Post creation with categories.
-- Commenting system.
-- Like and dislike functionality.
-- Post filtering by category and user activity.
-- Dockerized deployment.
+- **User Authentication**: Secure registration and login system using bcrypt for password hashing and session-based authentication.
+- **Dynamic Forum**: Create posts, contribute comments, and engage with others through a sleek, responsive interface.
+- **Private Messaging (DMs)**: A fully functional internal inbox system allowing registered users to send private text messages asynchronously.
+- **Interactive Sidebar**: Real-time conversation management sidebar to quickly switch between active DM threads.
+- **Profile Customization**: Users can personalize their accounts with "About Me" sections and unique profile pictures.
+- **Engagement System**: Like and dislike functionality for both posts and comments, with dynamic count updates.
+- **Smart Filtering**: Filter discussions by category (e.g., Fantasy, Sci-Fi, Mystery), your own authored posts, or posts you've liked.
+- **Global Search**: Search through the entire book archive by title or content.
+- **Themed UI**: Modern theme (Nord) with premium typography and interactive hover effects.
 
-## Tech Stack
-- **Go** (Backend)
-- **SQLite3** (Database)
-- **Docker** (Containerization)
+## Technologies Used
 
-## How to Build and Run
+### Backend
+- **Go (Golang)**: Core application logic and HTTP server.
+- **SQLite3**: Lightweight, file-based database with CGO enabled for performance.
+- **Gorilla Sessions**: Management of user sessions and state.
+- **Bcrypt**: Password encryption.
 
-### Dependencies
-- **Docker**: The application is fully containerized. You only need Docker (or Docker Desktop) installed on your system to build and run the forum. No local Go or SQLite installation is required.
+### Frontend
+- **HTML5 Templates**: Server-side rendering for security and speed.
+- **Vanilla JavaScript**: Dynamic UI interactions, including profile picture uploads and real-time sidebar updates.
+- **Tailwind CSS (via CDN)**: Modern utility-first styling for a premium look and feel.
+- **Google Fonts & Material Icons**: Professional typography (Inter, Serif) and consistent iconography.
 
-### Build the Application
-To build the Docker image, run the following command in the root directory of the project:
+### Infrastructure
+- **Docker**: Multi-stage containerization for seamless deployment.
+- **Alpine Linux**: Minimalist base image for the final production container.
+- **Git**: Version-controlled development with mirroring between Gitea and GitHub.
+
+## 🚀 How to Clone and Run
+
+### 1. Prerequisites
+- **Docker**: The application is fully containerized. No local Go or SQLite installation is required.
+
+### 2. Clone the Repository
+```bash
+git clone https://gitea.kood.tech/mumenosman/forum.git
+cd forum
+```
+
+### 3. Build and Start (Docker)
+To build the Docker image and start the container on port 8080:
 ```bash
 docker build -t forum-app .
-```
-
-### Run the Application
-Once the image is built, start the container and map it to port 8080 using:
-```bash
 docker run -p 8080:8080 forum-app
 ```
-The application will be accessible in your web browser at `http://localhost:8080`.
+The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**
 
-## Demo Credentials & Personas
-The application is pre-seeded with 5 unique personas, each with their own interests and writing styles. All accounts use the password: `123456`.
+## 👤 Demo Personas
+
+The application is pre-seeded with 5 unique personas to showcase multi-user interactions. All accounts use the default password: `123456`.
 
 | Persona | Email | Specialty |
 | :--- | :--- | :--- |
@@ -44,4 +63,5 @@ The application is pre-seeded with 5 unique personas, each with their own intere
 | **Julian** | `julian@inkwell.com` | Non-Fiction & General (The Pragmatist) |
 | **Sarah** | `sarah@inkwell.com` | Fiction & Mystery (The Aspiring Author) |
 
-You can use any of these to test multi-user interactions and see how the different writing styles populate the "Daily Inkwell."
+---
+*Developed by Mumen Osman for the Kood/Sisu curriculum.*
